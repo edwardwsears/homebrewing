@@ -65,9 +65,11 @@ def serve_page_brewing_add_brew():
       print "BEFORE POST\n";
       print "request.method: " + request.method
       if request.method == 'GET':
+        null=1; ##do nothing
+      elif request.method == 'POST':
         print "IN POST\n";
-        g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',["IPA 2", "IPA","2012-1-1",0,0,1])
-        ##g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
+        ##g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',["IPA 3", "IPA","2012-1-1",0,0,1])
+        g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
         print "IN POST 2\n";
         g.db.commit()
         print "IN POST 3\n";

@@ -7,6 +7,18 @@ create table brews(
   fermenting integer not null
 );
 
+create table bottles(
+  name text primary key,
+  num_bottles_12oz integer not null,
+  num_bottles_22oz integer not null
+);
+
+create table keg(
+  name text primary key,
+  current_volume integer not null,
+  total_volume integer not null
+);
+
 create table grain(
   name text primary key,
   type text not null,
