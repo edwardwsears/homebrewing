@@ -1,0 +1,8 @@
+To start ssh:
+%> ssh-agent /bin/bash
+
+To run server:
+ %> cd server/
+ %> . venv/bin/activate
+ %>  python brew_server.py
+
