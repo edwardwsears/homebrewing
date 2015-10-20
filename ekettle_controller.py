@@ -34,7 +34,7 @@ warning0F = False
 print options.brew_name + " ekettle temperature tracking\n"
 print "Temperature set point: "+str(options.set_temp)+"F\n"
 
-set_temp_controller_sequence(str(options.set_temp),str(options.set_range),"canHeat")
+temp_control_lib.set_temp_controller_sequence(ser,str(options.set_temp),str(options.set_range),"canHeat")
 
 while True:
     ##poll temperature probe

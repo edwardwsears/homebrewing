@@ -14,58 +14,182 @@
  * 10K resistor:
  * ends to +5V and ground
  * wiper to LCD VO pin (pin 3)
- 
+
+ Powerswitchtails
+ * port "1: +in"
+    * cold: pin 8
+    * hot: pin 13
+ * port "2: -in" connected to gnd
+
  */
 
 // include the library code:
 #include <LiquidCrystal.h>
 #include <OneWire.h>
+//#include <TimerOne.h>
+
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 //initialize temperature probe
 int DS18S20_Pin = 7;
 OneWire ds(DS18S20_Pin);
-char ch;
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+int set_temp = 0;
+int temp_range = 0;
+float curr_temp = 0.0;
+boolean canCool = false;
+boolean canHeat = false;
+boolean isCooling = false;
+boolean isHeating = false;
 
-//initialize powerswitchtail
-int switch_pin = 8;
+//initialize powerswitchtails
+int switch_pin_cold = 8;
+int switch_pin_hot = 13;
 
 void setup()  {
   // set up the LCD's number of columns and rows: 
   lcd.begin(16, 2);
   Serial.begin(9600);
+  serialFlush();
+  // reserve 200 bytes for the inputString:
+  inputString.reserve(200);
 
-  //setup switch
-  pinMode(switch_pin,OUTPUT);
-  digitalWrite(switch_pin,LOW);
+  //setup switch cold
+  pinMode(switch_pin_cold,OUTPUT);
+  digitalWrite(switch_pin_cold,LOW);
+  //setup switch hot
+  pinMode(switch_pin_hot,OUTPUT);
+  digitalWrite(switch_pin_hot,LOW);
+
+  //removed interrupt, just run in loop
+  //Timer1.initialize(500000);         // initialize timer1, and set a 1/2 second period
+  //Timer1.attachInterrupt(PID_control);  // attaches PID_control() as a timer overflow interrupt
+
 }
 
 void loop(){
-    float curr_temp = getTemp();
-    set_lcd(curr_temp);
-    
-   if (Serial.available()){
+    curr_temp = getTemp();
+    set_lcd(curr_temp,set_temp,isCooling,isHeating);
 
-     ch = Serial.read();
+    if (Serial.available()) {
+      boolean in_cmd_seq = true;
 
-     if ( ch == '1' ) { 
-       Serial.println(curr_temp);
-     }
-     else if ( ch == '2' ){
-       //turn on switch
-       digitalWrite(switch_pin,HIGH);
-     }
-     else if ( ch == '3' ){
-       //turn off switch
-       digitalWrite(switch_pin,LOW);
-     }
-     else {
-       delay(10);
-     }
-   }
-   
+      while (in_cmd_seq){
+        serialEvent(true);
+
+        if (inputString == "setTemp"){
+          serialEvent(true);
+          set_temp = inputString.toInt();
+        }
+        else if (inputString == "setRange"){
+          serialEvent(true);
+          temp_range = inputString.toInt();
+        }
+        else if (inputString == "setControlType"){
+          serialEvent(true);
+          if (inputString=="canCool"){
+            canCool = true;
+            canHeat = false;
+          }
+          else if (inputString=="canHeat"){
+            canCool = false;
+            canHeat = true;
+          }
+          else if (inputString=="dualControl"){
+            canCool = true;
+            canHeat = true;
+          }
+        }
+        else if (inputString == "sendTemp"){
+          //just send temp, no other cmds
+          //wait for serial to be ready
+          serialEvent(false);
+          Serial.println(curr_temp);
+          in_cmd_seq = false;
+        }
+        else if (inputString == "end"){
+          in_cmd_seq = false;
+        }
+
+      }
+    }
     
-    delay(1000*10); //loop every 10 secs
+    PID_control();
+    delay(1000*1); //loop every 1 secs
+}
+
+void PID_control(){
+  //TODO create better algorithm
+  if (set_temp!=0 && curr_temp!=0){
+      float set_temp_diff = abs(curr_temp - set_temp);
+      if (set_temp_diff < temp_range){
+        //shut off if hits setpoint
+        if (isCooling && curr_temp<set_temp){
+          //turn off cool
+          digitalWrite(switch_pin_cold,LOW);
+          isCooling=false;
+        }
+        else if (isHeating && curr_temp>set_temp){
+          //turn off heat
+          digitalWrite(switch_pin_hot,LOW);
+          isHeating=false;
+        }
+      }
+      else if (curr_temp>set_temp){
+        //too hot, turn on cool
+        if (canCool){
+          //turn on cool
+          digitalWrite(switch_pin_cold,HIGH);
+          isCooling=true;
+          //turn off heat
+          digitalWrite(switch_pin_hot,LOW);
+          isHeating=false;
+        }
+      }
+      else if (curr_temp<set_temp){
+        //too cold, turn on heat
+        if (canHeat){
+          //turn on heat
+          digitalWrite(switch_pin_hot,HIGH);
+          isHeating=true;
+          //turn off cold
+          digitalWrite(switch_pin_cold,LOW);
+          isCooling=false;
+        }
+      }
+    
+  }
+}
+
+void serialEvent(boolean send_ack) {
+  //clear the string
+  inputString = "";
+  stringComplete = false;
+
+  //serial is expected to arrive when this fn is called
+  //wait for serial to become available if not yet ready
+  while (Serial.available() == 0) {
+    delay(1000*1); //wait 1 sec
+  }
+  while (stringComplete==false) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+    if (inChar == '\n') {
+      // if the incoming character is a newline, set a flag
+      // so the main loop can do something about it:
+      stringComplete = true;
+    }
+    else {
+      // add it to the inputString:
+      inputString += inChar;
+    }
+    
+  }
+  
+  if (send_ack){
+     Serial.println("ack");
+  }
 }
 
 float getTemp(){
@@ -114,15 +238,35 @@ float getTemp(){
   return TemperatureSum;
 }
 
-void set_lcd(float curr_temp){
+void set_lcd(float curr_temp,int set_temp,boolean isCooling,boolean isHeating){
     lcd.setCursor(0, 0);
-    lcd.print("Temperature is:");
-    lcd.setCursor(0, 1);
     lcd.print(curr_temp);
-    lcd.setCursor(6, 1);
-    lcd.print("F");
+    lcd.print(" Set: ");
+    lcd.print(set_temp);
+    lcd.setCursor(0, 1);
+    if (isCooling){
+      lcd.print("         ");
+      lcd.setCursor(0, 1);
+      lcd.print("Cool On");
+    }
+    else if (isHeating){
+      lcd.print("         ");
+      lcd.setCursor(0, 1);
+      lcd.print("Heat On");
+    }
+    else{
+      lcd.print("         ");
+      lcd.setCursor(0, 1);
+      lcd.print("Both Off");
+    }
     //lcd.setCursor(12, 0);
     //lcd.setCursor(12, 1);
     //lcd.print("until high tide");
     //lcd.scrollDisplayLeft();
+}
+
+void serialFlush(){
+  while(Serial.available() > 0) {
+    char t = Serial.read();
+  }
 }

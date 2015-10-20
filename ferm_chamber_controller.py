@@ -32,11 +32,11 @@ parser.add_option("-e","--email",action="store",type="string",dest="email",defau
 (options,args) = parser.parse_args()
 
 #initialize
-curr_temp = 65;
-out_of_range = 0;
+curr_temp = 65
+has_equalized = False
 ser.flushInput()
 
-print options.brew_name + " temperature tracking\n"
+print options.brew_name + " fermentation temperature tracking\n"
 print "Temperature set point: "+str(options.set_temp)+"F with range of "+str(options.set_range)+"F\n"
 
 controlType = ""
@@ -47,56 +47,35 @@ elif (options.heat):
 elif (options.dual_stage):
   controlType = "dualControl"
 
-set_temp_controller_sequence(str(options.set_temp),str(options.set_range),controlType)
+##set_temp_controller_sequence(ser,str(options.set_temp),str(options.set_range),controlType)
+temp_control_lib.set_temp_controller_sequence(ser,str(options.set_temp),str(options.set_range),controlType)
 
 while True:
     ##poll temperature probe
-    ##ser.flushInput()
-    temp_received = False
-    while (temp_received==False):
-      try:
-        send_and_receive("sendTemp\n")
-        curr_temp = float(send_and_receive("ready\n"))
-        ser.flushInput()
-        temp_received = True;
-      except serial.serialutil.SerialException:
-        ## reset serail connection if failed
-        ser.close()
-        ser = serial.Serial('/dev/ttyACM0', 9600)
-        ser.flushInput()
-        temp_received = False;
-        time.sleep(2);
+    curr_temp = temp_control_lib.poll_temp_probe(ser)
     string_time = time.asctime( time.localtime(time.time()) );
     print string_time+"\n"
     print "current temp " + str(curr_temp) + "\n"
 
-    ####check for range, send email if out
-    ##email_delta_limit = options.set_range + 1; # degrees off of range to send email
-    ##if (((curr_temp > (options.upper_limit+email_delta_limit)) or (curr_temp < (options.lower_limit - email_delta_limit))) and out_of_range == 0):
-    ##    out_of_range = 1;
-    ##    temp_out_of_range = curr_temp;
-    ##    print "Temperature out of range. Sending email\n"
-    ##    body = options.brew_name+" is at "+str(curr_temp)+"F\n"
-    ##    body += "Temperature Range: "+str(options.lower_limit)+"F - "+str(options.upper_limit)+"F\n"
-    ##    cmd = "echo \""+body+"\" | mutt -s \"Brew Monitor: "+options.brew_name+" out of range\" edwardwsears@gmail.com"
-    ##    os.system(cmd)
+    ##check if temp has been in range before
+    ## so that we don't get emails on initial setting
+    if (curr_temp>(options.set_temp-options.set_range) and curr_temp<(options.set_temp+options.set_range)):
+      has_equalized = True
 
-    ##elif ((curr_temp < options.upper_limit) and (curr_temp > options.lower_limit) and out_of_range == 1):
-    ##    ## temp comes back in range
-    ##    out_of_range = 0;
-    ##    print "Temperature back in range. Sending email\n"
-    ##    body = options.brew_name+" is at "+str(curr_temp)+"F\n"
-    ##    body += "Temperature Range: "+str(options.lower_limit)+"F - "+str(options.upper_limit)+"F\n"
-    ##    cmd = "echo \""+body+"\" | mutt -s \"Brew Monitor: "+options.brew_name+" back in range\" edwardwsears@gmail.com"
-    ##    os.system(cmd)
-    ##elif (((curr_temp-temp_out_of_range)>1) and (out_of_range == 1)):
-    ##    ## temp out of range and changed a degree
-    ##    temp_out_of_range = curr_temp;
-    ##    print "Temperature out of range changed. Sending email\n"
-    ##    body = options.brew_name+" is at "+str(curr_temp)+"F\n"
-    ##    body += "Temperature Range: "+str(options.lower_limit)+"F - "+str(options.upper_limit)+"F\n"
-    ##    cmd = "echo \""+body+"\" | mutt -s \"Brew Monitor: "+options.brew_name+" out of range\" edwardwsears@gmail.com"
-    ##    os.system(cmd)
+    ##check for range, send email if out
+    email_delta_limit = options.set_range + 1; # degrees off of range to send email
+    if (curr_temp > (options.set_temp+email_delta_limit)):
+        print "Temperature too far out of range. Sending email\n"
+        body = options.brew_name+" is at "+str(curr_temp)+"F\n"
+        body += "Temperature Set Point "+str(options.set_temp)+"F \n"
+        cmd = "echo \""+body+"\" | mutt -s \"Ferm Chamber Monitor: "+options.brew_name+" out of range\" "+options.email
+        os.system(cmd)
+    elif (curr_temp < (options.set_temp-email_delta_limit)):
+        print "Temperature too far out of range. Sending email\n"
+        body = options.brew_name+" is at "+str(curr_temp)+"F\n"
+        body += "Temperature Set Point "+str(options.set_temp)+"F \n"
+        cmd = "echo \""+body+"\" | mutt -s \"Ferm Chamber Monitor: "+options.brew_name+" out of range\" "+options.email
+        os.system(cmd)
       
 
     ##sleep_time = 30*60; #30 mins in seconds
