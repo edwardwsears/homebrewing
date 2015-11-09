@@ -1,3 +1,13 @@
+FERMENTATION CONTROLLER:
+1. Upload get_temp/get_temp.ino to arduino.
+2. %> python ferm_chamber_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range> --{cool|heat|dual_stage}
+
+EKETTLE CONTROLLER:
+%> python ekettle_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range>
+
+
+WEBSITE:
+
 To start ssh:
 %> ssh-agent /bin/bash
 
@@ -5,4 +15,3 @@ To run server:
  %> cd server/
  %> . venv/bin/activate
  %>  python brew_server.py
-
