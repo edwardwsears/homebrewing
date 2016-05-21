@@ -1,60 +1,66 @@
 import sys
+import os
+import glob
 import time
+import RPi.GPIO as io
+io.setmode(io.BCM)
 
-#if you only want to send data to arduino (i.e. a signal to move a servo)
-## generally should not be used
-def send(ser, theinput ):
-  ser.write( theinput )
-  while True:
-    try:
-      time.sleep(0.01)
-      break
-    except:
-      pass
-  time.sleep(0.1)
+## rpi pins
+heat_pin = 23
+cool_pin = 24
 
-#if you would like to tell the arduino that you would like to receive data from the arduino
-##should always use this one
-def send_and_receive(ser, theinput ):
-  ser.write( theinput )
-  while True:
-    try:
-      time.sleep(0.01)
-      state = ser.readline()
-      return state
-    except:
-      pass
-  time.sleep(0.1)
+ 
+#os.system('modprobe w1-gpio')
+#os.system('modprobe w1-therm')
+ 
+base_dir = '/sys/bus/w1/devices/'
+ 
+def read_temp_raw(serial_num):
+    device_file = base_dir + '/' + serial_num + '/w1_slave'
+    f = open(device_file, 'r')
+    lines = f.readlines()
+    f.close()
+    return lines
+ 
+#fn to read temp from temp sensor
+## returns temp in deg F
+def read_temp(serial_num):
+    lines = read_temp_raw(serial_num)
+    while lines[0].strip()[-3:] != 'YES':
+        time.sleep(0.2)
+        lines = read_temp_raw(serial_num)
+    equals_pos = lines[1].find('t=')
+    if equals_pos != -1:
+        temp_string = lines[1][equals_pos+2:]
+        temp_c = float(temp_string) / 1000.0
+        temp_f = temp_c * 9.0 / 5.0 + 32.0
+        return temp_f
 
-def set_temp_controller_sequence(ser,set_temp,set_range,controlType):
-  #send set_temp
-  send_and_receive(ser,"setTemp\n")
-  send_and_receive(ser,set_temp+"\n")
-  #send set_range
-  send_and_receive(ser,"setRange\n")
-  send_and_receive(ser,set_range+"\n")
-  #send setControlType
-  send_and_receive(ser,"setControlType\n")
-  send_and_receive(ser,controlType+"\n")
-  #send end
-  send_and_receive(ser,"end\n")
-  ser.flushInput()
+# fns to control SSRs
+def io_setup():
+  io.setup(heat_pin,io.OUT)
+  io.setup(cool_pin,io.OUT)
+def set_cool_ssr(value):
+  io.output(cool_pin,value)
+def set_heat_ssr(value):
+  io.output(heat_pin,value)
 
-#returns current temperature on temp probe
-#must have initialized serial and temp controller
-def poll_temp_probe(ser):
-  temp_received = False
-  while (temp_received==False):
-    try:
-      send_and_receive(ser,"sendTemp\n")
-      curr_temp = float(send_and_receive(ser,"ready\n"))
-      ser.flushInput()
-      temp_received = True;
-    except serial.serialutil.SerialException:
-      ## reset serail connection if failed
-      ser.close()
-      ser = serial.Serial('/dev/ttyACM0', 9600)
-      ser.flushInput()
-      temp_received = False;
-      time.sleep(2);
-  return curr_temp
+kP_cool =  1;
+kP_heat =  1;
+kI_cool =  1;
+kI_heat =  1;
+kD_cool =  1;
+kD_heat =  1;
+LOWEST_FRIDGE_TEMP=35;
+
+
+def calculate_target_temp(set_temp,beer_temp,avg_temp,avg_avg_temp):
+  position_error = (beer_temp - set_temp) * kP_cool
+  integral_error = (avg_temp - set_temp) * kI_cool
+  derivative_error = (avg_avg_temp - set_temp) * kD_cool
+  control_undershoot = position_error + integral_error + derivative_error;
+  target = set_temp - control_undershoot
+  if (target < LOWEST_FRIDGE_TEMP):
+    target = LOWEST_FRIDGE_TEMP
+  return target
+
