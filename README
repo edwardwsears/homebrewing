@@ -11,7 +11,12 @@ WEBSITE:
 To start ssh:
 %> ssh-agent /bin/bash
 
-To run server:
+Server:
+
+Initial setup:
+ %> sudo apt-get install python-flask
+To run:
  %> cd server/
  %> . venv/bin/activate
  %>  python brew_server.py
+Runs on: http://127.0.0.1:5000/

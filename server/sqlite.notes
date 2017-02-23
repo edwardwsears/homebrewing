@@ -1,0 +1,21 @@
+Running:
+%> sqlite3 brew_server.sql
+
+Show tables:
+%> .tables
+
+Show schema:
+%> .schema <optional table>
+
+Insert:
+%> insert into <table> values(<>,<>,...);
+
+Select:
+%> select * from <table>;
+
+Update:
+%> update <table> set <field> = <value>; //optional: where <field> = <value> ;
+
+
+Date:
+date("<YYYY-MM-DD>")

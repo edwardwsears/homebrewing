@@ -84,7 +84,7 @@
               <div class="pure-u-1-2"> 
               <div class="pure-g"> <!-- keg slice -->
               <div class="pure-u-1-1"> 
-                <h2 class="content-subhead">Beer Name: IPA 2</h2>
+                <h2 class="content-subhead">Beer Name: {{kegData['name']}}</h2>
               </div>
               <div class="pure-u-1-10"> <!-- Beer level indicator -->
                 <div class="skill">
@@ -94,10 +94,10 @@
                           <script>
                           $(document).ready(function(){
                               var skillBar = $('#level');
-                              var beers_left = 100;
-                              var total_beers = 150;
-                              var beers_left_percent = (beers_left/total_beers)*100;
-                              var skillVal = beers_left_percent+"%"; //TODO add pull from db
+                              var beersLeft = {{kegData['current_volume']}};
+                              var totalBeers = {{kegData['total_volume']}};
+                              var beersLeftPercent = (beersLeft/totalBeers)*100;
+                              var skillVal = beersLeftPercent+"%"; //TODO add pull from db
                               $(skillBar).animate({
                                   height: skillVal
                               }, 1500);
@@ -109,13 +109,12 @@
                 </div>  <!-- skill -->
               </div>  <!-- pure -->
               <div class="pure-u-4-5"> <!-- keg Beer count -->
-                <h2 id="beers_left" class="content-subhead">Beers left: 32</h2> <!-- TODO add pull from DB -->
+                <h2 id="beersLeft" class="content-subhead">Beers left: 32</h2> <!-- TODO add pull from DB -->
                 <script>
                   $(document).ready(function(){
-                    //TODO pull from DB
-                    var beers_left=100;
-                    var beers_left_string = "Beers Left: "+beers_left;
-                    $('#beers_left').text(beers_left_string);
+                    var beersLeft={{kegData['current_volume']}};
+                    var beersLeftString = "Beers Left: "+beersLeft;
+                    $('#beersLeft').text(beersLeftString);
                   });
                 </script>
               </div>  <!-- pure u -->
@@ -126,21 +125,23 @@
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th>Number of Bottles</th>
                             <th>Date Brewed</th>
                         </tr>
                     </thead>
 
                     <tbody>
+                        {% for bottle in bottleData %}
                         <tr>
-                            <td>Irish Red 1</td>
-                            <td>1/22/15</td>
+                            <td>{{bottle['name']}}</td>
+                            <td>{{bottle['num_bottles_12oz'] + bottle['num_bottles_22oz']}}</td>
+                            {% for brew in brewData %}
+                                {% if brew['name'] == bottle['name'] %}
+                            <td>{{brew['brew_date']}}</td>
+                                {% endif %}
+                            {% endfor %}
                         </tr>
-
-                        <tr>
-                            <td>IPA 1</td>
-                            <td>2/22/15</td>
-                        </tr>
-
+                        {% endfor %}
                     </tbody>
                   </table>
             </div>  <!-- pure g -->

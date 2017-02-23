@@ -21,7 +21,9 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 
 def connect_db():
-    return sqlite3.connect(app.config['DATABASE'])
+    con = sqlite3.connect(DATABASE)
+    con.row_factory = sqlite3.Row
+    return con
 
 @app.before_request
 def before_request():
@@ -40,14 +42,16 @@ def serve_page_index():
 
 @app.route('/brewing/on_tap.html')
 def serve_page_brewing_on_tap():
-    return render_template('brewing/on_tap.html',)
+    kegData = db_execute("SELECT * FROM keg")
+    bottleData = db_execute("SELECT * FROM bottles")
+    brewData = db_execute("SELECT * FROM brews")
+    #return render_template('brewing/on_tap.html', kegBrewName=kegData[0], kegCurrentVolume=kegData[1], kegTotalVolume=kegData[2])
+    return render_template('brewing/on_tap.html', kegData=kegData[0],bottleData=bottleData,brewData=brewData)
 
 @app.route('/brewing/fermenting.html')
 def serve_page_brewing_fermenting():
-    cur = g.db.execute("SELECT name FROM brews WHERE fermenting=1")
-    for row in cur.fetchall():
-      brew_name=row
-    return render_template('brewing/fermenting.html', name=brew_name[0])
+    brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
+    return render_template('brewing/fermenting.html', name=brewName[0])
 
 @app.route('/brewing/brews.html')
 def serve_page_brewing_brews():
@@ -98,6 +102,15 @@ def brewing_logout():
     session.pop('logged_in', None)
     flash('You were logged out')
     return redirect(url_for('serve_page_brewing_login'))
+
+### Helper fns #######################
+def db_execute(query):
+    cur = g.db.execute(query)
+    #for row in cur.fetchall():
+    #  queryData=row
+    queryData = cur.fetchall()
+    return queryData
+
 
 #to run the application
 if __name__ == '__main__':
