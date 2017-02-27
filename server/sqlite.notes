@@ -16,6 +16,11 @@ Select:
 Update:
 %> update <table> set <field> = <value>; //optional: where <field> = <value> ;
 
+Alter table:
+alter table <table> add column <column> <type>
+
+Quit:
+%> .quit
 
 Date:
 date("<YYYY-MM-DD>")

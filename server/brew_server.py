@@ -6,6 +6,8 @@
 #imports
 from flask import Flask, url_for, render_template, request, session, g, redirect, abort, flash
 import sqlite3
+import flask_sijax
+import os
 
 #config
 DATABASE='brew_server.sql'
@@ -14,11 +16,17 @@ SECRET_KEY='key'
 USERNAME='esears'
 PASSWORD='esears'
 
+path = os.path.join('.', os.path.dirname(__file__), 'static/js/sijax/')
+
 app = Flask(__name__)
 # can put the config into a file
 #BREW_SERVER_SETTINGS= <filename>
 #app.config.from_envvar('BREW_SERVER_SETTINGS', silent=True)
 app.config.from_object(__name__)
+app.config['SIJAX_STATIC_PATH'] = path
+app.config['SIJAX_JSON_URI'] = '/static/js/sijax/json2.js'
+flask_sijax.Sijax(app)
+
 
 def connect_db():
     con = sqlite3.connect(DATABASE)
@@ -40,12 +48,38 @@ def teardown_request(exception):
 def serve_page_index():
     return render_template('index.html',)
 
-@app.route('/brewing/on_tap.html')
+##@app.route('/brewing/on_tap.html')
+@flask_sijax.route(app, '/brewing/on_tap.html')
 def serve_page_brewing_on_tap():
-    kegData = db_execute("SELECT * FROM keg")
+    def update_beers_left_handler(obj_response):
+        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        beersLeft = int(kegData[0]['current_volume'] / 16)
+        beersLeftString = "Beers Left: " + str(beersLeft)
+        obj_response.html("#beersLeft",beersLeftString)
+
+    def update_beers_left_percent_handler(obj_response):
+        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        beersLeft = float(kegData[0]['current_volume'])
+        totalBeers = float(kegData[0]['total_volume'])
+        beersLeftPercent = (beersLeft/totalBeers)*100;
+        print("beersLeftPercent: "+str(totalBeers)+"\n")
+        scriptStr = " var skillBar = $('#level'); $(skillBar).animate({ height: "+str(beersLeftPercent)+" }, 1500); "
+        obj_response.script(scriptStr);
+
+    if g.sijax.is_sijax_request:
+        # Sijax request detected - let Sijax handle it
+        g.sijax.set_request_uri('/brewing/on_tap.html')
+        g.sijax.register_callback('update_beers_left', update_beers_left_handler)
+        g.sijax.register_callback('update_beers_left_percent', update_beers_left_percent_handler)
+        return g.sijax.process_request()
+
+    beerOnTap = db_execute("select name,style from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
-    #return render_template('brewing/on_tap.html', kegBrewName=kegData[0], kegCurrentVolume=kegData[1], kegTotalVolume=kegData[2])
+
     return render_template('brewing/on_tap.html', kegData=kegData[0],bottleData=bottleData,brewData=brewData)
 
 @app.route('/brewing/fermenting.html')
