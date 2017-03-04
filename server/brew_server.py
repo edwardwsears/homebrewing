@@ -48,7 +48,6 @@ def teardown_request(exception):
 def serve_page_index():
     return render_template('index.html',)
 
-##@app.route('/brewing/on_tap.html')
 @flask_sijax.route(app, '/brewing/on_tap.html')
 def serve_page_brewing_on_tap():
     def update_beers_left_handler(obj_response):
@@ -56,31 +55,65 @@ def serve_page_brewing_on_tap():
         kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         beersLeftString = "Beers Left: " + str(beersLeft)
-        obj_response.html("#beersLeft",beersLeftString)
+        obj_response.html("#beers_left",beersLeftString)
 
-    def update_beers_left_percent_handler(obj_response):
+    def update_oz_left_handler(obj_response):
+        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        beersLeft = int(kegData[0]['current_volume'] / 16)
+        ozLeftString =  str(kegData[0]['current_volume']) + "/" + str(kegData[0]['total_volume']) + " fl oz"
+        obj_response.html("#oz_left",ozLeftString)
+
+    def update_beers_left_pic_handler(obj_response):
         beerOnTap = db_execute("select name,style from brews where on_tap=1")
         kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
         beersLeft = float(kegData[0]['current_volume'])
         totalBeers = float(kegData[0]['total_volume'])
         beersLeftPercent = (beersLeft/totalBeers)*100;
-        print("beersLeftPercent: "+str(totalBeers)+"\n")
-        scriptStr = " var skillBar = $('#level'); $(skillBar).animate({ height: "+str(beersLeftPercent)+" }, 1500); "
-        obj_response.script(scriptStr);
+        if (beersLeftPercent == 0):
+            img_name = "images/keg/0.png";
+        elif (beersLeftPercent <= 10):
+            img_name = "images/keg/10.png";
+        elif (beersLeftPercent <= 25):
+            img_name = "images/keg/25.png";
+        elif (beersLeftPercent <= 50):
+            img_name = "images/keg/50.png";
+        elif (beersLeftPercent <= 75):
+            img_name = "images/keg/75.png";
+        elif (beersLeftPercent <= 100):
+            img_name = "images/keg/100.png";
+        img_src = url_for('static', filename=img_name)
+        obj_response.attr("#keg_pic","src",img_src);
+
+    def update_bottles_left_handler(obj_response,bottleId,size,value):
+        #update value
+        bottleSizeName = "num_bottles_" + str(size) + "oz"
+        currentBottles = db_execute("SELECT "+bottleSizeName+" FROM bottles where id=\"" + str(bottleId) + "\"")
+        nextBottles = currentBottles[0][bottleSizeName] + value
+        if (nextBottles<0):
+            nextBottles = 0
+        print("current: "+str(currentBottles[0][bottleSizeName])+" next: "+str(nextBottles))
+        db_execute("update bottles set "+bottleSizeName+"="+str(nextBottles)+" where id=\"" + str(bottleId) + "\"")
+        #display new value
+        idName = "#brew_" + str(bottleId) + "_bottles_left_" +str(size)+"oz"
+        nextBottlesStr = str(size)+"oz: "+str(nextBottles);
+        obj_response.html(idName,nextBottlesStr)
 
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brewing/on_tap.html')
         g.sijax.register_callback('update_beers_left', update_beers_left_handler)
-        g.sijax.register_callback('update_beers_left_percent', update_beers_left_percent_handler)
+        g.sijax.register_callback('update_oz_left', update_oz_left_handler)
+        g.sijax.register_callback('update_beers_left_pic', update_beers_left_pic_handler)
+        g.sijax.register_callback('update_bottles_left', update_bottles_left_handler)
         return g.sijax.process_request()
 
-    beerOnTap = db_execute("select name,style from brews where on_tap=1")
+    beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
     kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
 
-    return render_template('brewing/on_tap.html', kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+    return render_template('brewing/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
 
 @app.route('/brewing/fermenting.html')
 def serve_page_brewing_fermenting():
@@ -140,11 +173,9 @@ def brewing_logout():
 ### Helper fns #######################
 def db_execute(query):
     cur = g.db.execute(query)
-    #for row in cur.fetchall():
-    #  queryData=row
     queryData = cur.fetchall()
+    g.db.commit()
     return queryData
-
 
 #to run the application
 if __name__ == '__main__':

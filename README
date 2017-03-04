@@ -16,6 +16,7 @@ Server:
 
 Initial setup:
  %> sudo apt-get install python-flask
+ %> easy_install flask-sijax
 To run:
  %> cd server/
  %> . venv/bin/activate
