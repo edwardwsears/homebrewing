@@ -129,15 +129,30 @@
                             <td>{{brew['abv']}}</td>
                             <td>{{brew['brew_date']}}</td>
                             <td>
+                                <table class="pure-table pure-table-horizontal">
+                                    <tbody>
+                                        <tr>
+                                            <td>
                                 <a id=brew_{{brew['id']}}_bottles_left_12oz> </a>
                                 <script>Sijax.request('update_bottles_left',[{{brew['id']}}, 12,0]) </script> <!-- initial load -->
+                                            </td>
+                                            <td>
                                 <input type="button" value="-1" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12,-1])">
                                 <input type="button" value="+1" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12, 1])">
-                                <br>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
                                 <a id=brew_{{brew['id']}}_bottles_left_22oz> </a>
                                 <script>Sijax.request('update_bottles_left',[{{brew['id']}}, 22,0]) </script> <!-- initial load -->
+                                            </td>
+                                            <td>
                                 <input type="button" value="-1" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22, -1])">
                                 <input type="button" value="+1" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22,  1])">
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </td>
                         </tr>
                             {% endif %}
