@@ -108,6 +108,8 @@ def serve_page_brewing_on_tap():
 
         #days since tap
         daysSinceTap = (datetime.now() - datetime.strptime(kegData[0]['tap_date'],"%Y-%m-%d")).days
+        daysSinceTapString = "Days Since Tap: "+str(daysSinceTap)
+        kegStatsString +=  daysSinceTapString + "<br>"
 
         #Average consumption
         totalOzConsumed = kegData[0]['total_volume'] - kegData[0]['current_volume']
