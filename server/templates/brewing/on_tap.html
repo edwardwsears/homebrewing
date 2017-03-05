@@ -76,44 +76,52 @@
 
                 <tbody>
                     <tr>
-                        <td>
+                        <td width="50%">
                             <h1> {{kegData['name']}} </h1>
                             <h4> 
                                 {{beerOnTap['description']}}
                             </h4>
-                            <div class="pure-g">
-                                <div class="pure-u-1-2">
-                                    <h4> 
+                            <h4> 
                                 Style: {{beerOnTap['style']}} <br>
                                 OG: {{beerOnTap['og']}} <br>
                                 ABV: {{beerOnTap['abv']}} <br>
                                 IBU: {{beerOnTap['ibu']}} <br>
                                 Brew Date: {{beerOnTap['brew_date']}}
-                                    </h4>
-                                </div>
-                                <div class="pure-u-1-2">
-                                    <h4 id="keg_stats"> </h4>
-                                    <script>
-                                Sijax.request('update_keg_stats') <!-- initial load -->
-                                setInterval(function(){
-                                    Sijax.request('update_keg_stats')
-                                },2000);
-                                    </script> 
-                                </div>
-                            </div>
+                            </h4>
                         </td>
 
                         <td>
-                          <h4 id=beers_left> Beers Left: 10</h3>
-                          <img id="keg_pic" style='height:10em;width:10em' src={{ url_for('static', filename='images/keg/100.png') }}>
-                          <h4 id=oz_left> 10/100 fl oz</h3>
-                          <script>
-                              setInterval(function(){
-                                  Sijax.request('update_beers_left_pic');
-                                  Sijax.request('update_beers_left');
-                                  Sijax.request('update_oz_left');
-                              },2000);
-                          </script>
+                            <div class="pure-g">
+                                <div class="pure-u-1-2">
+                                    <h3 id="keg_stats" style="white-space:nowrap"> </h3>
+                                    <script>
+                                        Sijax.request('update_keg_stats') <!-- initial load -->
+                                        setInterval(function(){
+                                            Sijax.request('update_keg_stats')
+                                        },2000);
+                                    </script>
+                                    <br>
+                                    <h3 id="last_pour_stats" style="white-space:nowrap"> </h3>
+                                    <script>
+                                        Sijax.request('update_last_pour_stats') <!-- initial load -->
+                                        setInterval(function(){
+                                            Sijax.request('update_last_pour_stats')
+                                        },2000);
+                                    </script> 
+                                </div>
+                                <div class="pure-u-1-2" style="text-align:center">
+                                    <h4 id=beers_left> Beers Left: </h3>
+                                    <img id="keg_pic" style='height:10em;width:10em' src={{ url_for('static', filename='images/keg/100.png') }}>
+                                    <h4 id=oz_left> 10/100 fl oz</h3>
+                                    <script>
+                                      setInterval(function(){
+                                          Sijax.request('update_beers_left_pic');
+                                          Sijax.request('update_beers_left');
+                                          Sijax.request('update_oz_left');
+                                      },2000);
+                                    </script>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

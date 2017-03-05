@@ -129,6 +129,17 @@ def serve_page_brewing_on_tap():
 
         obj_response.html("#keg_stats",kegStatsString)
 
+    def update_last_pour_stats_handler(obj_response):
+        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        lastPourString = ""
+
+        lastPourString += "Last pour: "
+        lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
+        lastPourString += "at " + str(kegData[0]['last_pour_time'])
+
+        obj_response.html("#last_pour_stats",lastPourString)
+
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brewing/on_tap.html')
@@ -137,6 +148,7 @@ def serve_page_brewing_on_tap():
         g.sijax.register_callback('update_beers_left_pic', update_beers_left_pic_handler)
         g.sijax.register_callback('update_bottles_left', update_bottles_left_handler)
         g.sijax.register_callback('update_keg_stats', update_keg_stats_handler)
+        g.sijax.register_callback('update_last_pour_stats', update_last_pour_stats_handler)
         return g.sijax.process_request()
 
     beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
