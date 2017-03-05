@@ -74,17 +74,31 @@
 
                 <tbody>
                     <tr>
-
                         <td>
                             <h1> {{kegData['name']}} </h1>
                             <h4> 
-                                {{beerOnTap['description']}} <br> <br>
+                                {{beerOnTap['description']}}
+                            </h4>
+                            <div class="pure-g">
+                                <div class="pure-u-1-2">
+                                    <h4> 
                                 Style: {{beerOnTap['style']}} <br>
                                 OG: {{beerOnTap['og']}} <br>
                                 ABV: {{beerOnTap['abv']}} <br>
                                 IBU: {{beerOnTap['ibu']}} <br>
                                 Brew Date: {{beerOnTap['brew_date']}}
-                            </h4>
+                                    </h4>
+                                </div>
+                                <div class="pure-u-1-2">
+                                    <h4 id="keg_stats"> </h4>
+                                    <script>
+                                Sijax.request('update_keg_stats') <!-- initial load -->
+                                setInterval(function(){
+                                    Sijax.request('update_keg_stats')
+                                },2000);
+                                    </script> 
+                                </div>
+                            </div>
                         </td>
 
                         <td>

@@ -8,6 +8,8 @@ from flask import Flask, url_for, render_template, request, session, g, redirect
 import sqlite3
 import flask_sijax
 import os
+from datetime import datetime
+from decimal import *
 
 #config
 DATABASE='brew_server.sql'
@@ -99,6 +101,32 @@ def serve_page_brewing_on_tap():
         nextBottlesStr = str(size)+"oz: "+str(nextBottles);
         obj_response.html(idName,nextBottlesStr)
 
+    def update_keg_stats_handler(obj_response):
+        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        kegStatsString = ""
+
+        #days since tap
+        daysSinceTap = (datetime.now() - datetime.strptime(kegData[0]['tap_date'],"%Y-%m-%d")).days
+
+        #Average consumption
+        totalOzConsumed = kegData[0]['total_volume'] - kegData[0]['current_volume']
+        ozPerDayConsumed = Decimal(totalOzConsumed)/Decimal(daysSinceTap)
+        beersPerDayConsumed = ozPerDayConsumed/16
+        beersPerDayString = "Average beers/day: "
+        beersPerDayString += str(round(beersPerDayConsumed,2))
+        beersPerDayString += " ("+str(round(ozPerDayConsumed,2))+"oz)"
+        kegStatsString +=  beersPerDayString + "<br>"
+
+        # Est empty date
+        daysUntilEmpty = int(kegData[0]['current_volume']/ozPerDayConsumed)
+        daysUntilEmptyString = "Est Days Until Empty: "+str(daysUntilEmpty)
+        kegStatsString +=  daysUntilEmptyString + "<br>"
+        daysUntilBrewString = "Need to Brew in: "+str(daysUntilEmpty-14)+" days"
+        kegStatsString +=  daysUntilBrewString + "<br>"
+
+        obj_response.html("#keg_stats",kegStatsString)
+
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brewing/on_tap.html')
@@ -106,6 +134,7 @@ def serve_page_brewing_on_tap():
         g.sijax.register_callback('update_oz_left', update_oz_left_handler)
         g.sijax.register_callback('update_beers_left_pic', update_beers_left_pic_handler)
         g.sijax.register_callback('update_bottles_left', update_bottles_left_handler)
+        g.sijax.register_callback('update_keg_stats', update_keg_stats_handler)
         return g.sijax.process_request()
 
     beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
