@@ -42,6 +42,7 @@ def Main():
                     print str(round(Decimal(pourTime),2))+" seconds for "+str(calibrationSizeOz)+"oz"
                     secPerOz = pourTime/calibrationSizeOz
                     print str(round(Decimal(secPerOz),2))+" seconds per oz\n"
+                    send_oz_post(16)
                     # TODO add sanity check here
                     calibrated = True;
                 else:
