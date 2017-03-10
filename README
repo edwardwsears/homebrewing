@@ -22,3 +22,9 @@ To run:
  %> . venv/bin/activate
  %>  python brew_server.py
 Runs on: http://127.0.0.1:5000/
+
+Tap Handle Sensor Monitor:
+ %> git clone --recursive https://github.com/WiringPi/WiringPi-Python.git
+ %> cd WiringPi-Python/
+ %> sudo apt-get install python-dev python-setuptools swig
+ %> ./build

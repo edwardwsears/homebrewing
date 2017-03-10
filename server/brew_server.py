@@ -4,12 +4,13 @@
 ##
 
 #imports
-from flask import Flask, url_for, render_template, request, session, g, redirect, abort, flash
+from flask import Flask, url_for, render_template, request, session, g, redirect, abort, flash, jsonify
 import sqlite3
 import flask_sijax
 import os
 from datetime import datetime
 from decimal import *
+from pytz import timezone
 
 #config
 DATABASE='brew_server.sql'
@@ -134,9 +135,9 @@ def serve_page_brewing_on_tap():
         kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
         lastPourString = ""
 
-        lastPourString += "Last pour: "
-        lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
-        lastPourString += "at " + str(kegData[0]['last_pour_time'])
+        lastPourString += "Last pour: <br>"
+        lastPourString += str(kegData[0]['last_pour_volume']) + " oz <br>"
+        lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
 
         obj_response.html("#last_pour_stats",lastPourString)
 
@@ -157,6 +158,21 @@ def serve_page_brewing_on_tap():
     brewData = db_execute("SELECT * FROM brews")
 
     return render_template('brewing/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+
+@app.route('/brewing/update_tap.html',methods=['POST'])
+def serve_page_brewing_update_tap():
+    ozPoured = request.form['oz_poured']
+    beerOnTap = db_execute("select name,style from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+
+    newVolume = kegData[0]['current_volume'] - int(ozPoured)
+    if (newVolume < 0):
+        newVolume = 0
+
+    db_execute("update keg set current_volume="+str(newVolume)+" where name=\"" + beerOnTap[0]['name'] + "\"")
+    db_execute("update keg set last_pour_volume="+str(ozPoured)+" where name=\"" + beerOnTap[0]['name'] + "\"")
+    db_execute("update keg set last_pour_time=DateTime('now') where name=\"" + beerOnTap[0]['name'] + "\"")
+    return jsonify(result=True)
 
 @app.route('/brewing/fermenting.html')
 def serve_page_brewing_fermenting():
@@ -220,6 +236,20 @@ def db_execute(query):
     g.db.commit()
     return queryData
 
+def datetime_pst(dt):
+    # convert nieve to pacific
+    dt_utc = dt.replace(tzinfo=timezone('UTC'))
+    return dt_utc.astimezone(timezone('US/Pacific'))
+
+def date_from_sqlite(dt):
+    return datetime.strptime(dt,"%Y-%m-%d")
+
+def datetime_from_sqlite(dt):
+    return datetime.strptime(dt,"%Y-%m-%d %H:%M:%S")
+
+def datetime_to_string(dt):
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p")
+
 #to run the application
 if __name__ == '__main__':
-    app.run(debug=DEBUG)
+    app.run(debug=DEBUG,host='0.0.0.0')
