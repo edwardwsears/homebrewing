@@ -177,7 +177,10 @@ def serve_page_brewing_update_tap():
 @app.route('/brewing/fermenting.html')
 def serve_page_brewing_fermenting():
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
-    return render_template('brewing/fermenting.html', name=brewName[0])
+    if (len(brewName)==1):
+        return render_template('brewing/fermenting.html', name=brewName[0])
+    else:
+        return render_template('brewing/fermenting.html', name="Nothing")
 
 @app.route('/brewing/brews.html')
 def serve_page_brewing_brews():
