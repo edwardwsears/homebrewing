@@ -9,6 +9,7 @@ import re
 ##temp control file
 import temp_control_lib
 import requests
+import datetime
 
 
 #MAIN
@@ -23,6 +24,7 @@ def Main():
   parser.add_option("-t","--heat",action="store_true",dest="heat",help="heating temp control")
   parser.add_option("-d","--dual_stage",action="store_true",dest="dual_stage",help="heating and cooling temp control")
   parser.add_option("-e","--email",action="store",type="string",dest="email",default="edwardwsears@gmail.com",help="Email to send to")
+  parser.add_option("-i","--first",action="store_true",dest="first_reading",help="specifies first reading of brew")
   ##parser.add_option("-g","--graphs_only",action="store_true",dest="graphs_only",default=False,help="Only generate graphs (no stats)")
   (options,args) = parser.parse_args()
 
@@ -30,7 +32,7 @@ def Main():
   if (options.dual_stage):
     options.cool = True;
     options.heat = True;
-    
+
   ## Initializations ##################
   sleep_time = 5; #check every 5 seconds
   curr_temp = 65
@@ -52,6 +54,8 @@ def Main():
 
   ##initialize control vars
   curr_beer_temp = temp_control_lib.read_temp(BEER_TEMP_PROBE)
+  update_db(curr_beer_temp,options.first_reading)
+  last_update = datetime.datetime.now()
   avg_temp = curr_beer_temp
   avg_temp_sum = curr_beer_temp
   avg_temp_num_samples = 1
@@ -86,6 +90,10 @@ def Main():
     print "avg temp: " + str(avg_temp) + "\n"
     print "avg avg temp: " + str(avg_avg_temp) + "\n"
     print "Chamber State: " + str(CHAMBER_STATE) + "\n\n"
+
+    #update db
+    if ((datetime.datetime.now() - last_update).minutes > 30):
+        update_db(curr_beer_temp,False)
 
     #update averages
     avg_temp_sum += curr_beer_temp
@@ -168,23 +176,11 @@ if __name__ == "__main__":
   except KeyboardInterrupt:  
     temp_control_lib.io.cleanup()  
 
+def update_db(temp,firs_reading):
+    if (first_reading):
+        send_temp_post(temp,True)
+    else:
+        send_temp_post(temp,False)
 
-
-
-
-    
-    ## TODO old email code
-    ####check for range, send email if out
-    ##email_delta_limit = options.set_range + 1; # degrees off of range to send email
-    ##if (curr_temp > (options.set_temp+email_delta_limit)):
-    ##    print "Temperature too far out of range. Sending email\n"
-    ##    body = options.brew_name+" is at "+str(curr_temp)+"F\n"
-    ##    body += "Temperature Set Point "+str(options.set_temp)+"F \n"
-    ##    cmd = "echo \""+body+"\" | mutt -s \"Ferm Chamber Monitor: "+options.brew_name+" out of range\" "+options.email
-    ##    os.system(cmd)
-    ##elif (curr_temp < (options.set_temp-email_delta_limit)):
-    ##    print "Temperature too far out of range. Sending email\n"
-    ##    body = options.brew_name+" is at "+str(curr_temp)+"F\n"
-    ##    body += "Temperature Set Point "+str(options.set_temp)+"F \n"
-    ##    cmd = "echo \""+body+"\" | mutt -s \"Ferm Chamber Monitor: "+options.brew_name+" out of range\" "+options.email
-    ##    os.system(cmd)
+def send_temp_post(temp,first):
+    r = requests.post("http://ec2-52-40-75-70.us-west-2.compute.amazonaws.com/update_temp.html", data={'temp' : temp,'first':first})

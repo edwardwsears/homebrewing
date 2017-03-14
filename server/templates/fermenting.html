@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/grids-responsive-min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_fermentation.css') }}">
+    <script src="{{ url_for('static', filename='jquery-1.11.2.min.js') }}"></script>
+    <script type="text/javascript"
+        src="/static/js/sijax/sijax.js"></script>
+    <script type="text/javascript">
+        {{ g.sijax.get_js()|safe }}
+    </script>
 
     <!-- Fermentation temperature graph  -->
     <script type="text/javascript">
@@ -18,7 +24,7 @@
         {
           theme: "theme2",
           title:{
-            text: "Fermentation Temperature - by Hour"
+            text: "Fermentation Temperature - over time"
           },
           animationEnabled: true,
           axisX: {
@@ -35,13 +41,9 @@
             type: "line",
             //lineThickness: 3,
             dataPoints: [
-            { x: new Date(Date.UTC (2012, 01, 1, 1,0) ),   y: 65 },
-            { x: new Date(Date.UTC (2012, 01, 1, 2,0) ),   y: 63 },
-            { x: new Date(Date.UTC (2012, 01, 1, 3,0) ),   y: 65 },
-            { x: new Date(Date.UTC (2012, 01, 1, 4,0) ),   y: 68 },
-            { x: new Date(Date.UTC (2012, 01, 1, 5,0) ),   y: 69 },
-            { x: new Date(Date.UTC (2012, 01, 1, 6,0) ),   y: 60 },
-            { x: new Date(Date.UTC (2012, 01, 1, 7,0) ),   y: 65 }
+            {% for temp in tempList %}
+            { x: new Date(Date.UTC ({{temp['year']}}, {{temp['month']}}, {{temp['day']}}, {{temp['hour']}},{{temp['minute']}}) ),   y: {{temp['temp']}} },
+            {% endfor %}
             ]
           }
           ]
@@ -70,7 +72,13 @@
         <div class="banner-head">
             <h2>Current Brew Fermenting: {{ name }}</h2>
             <h4>Real Time Stats for the Current Fermenting Brew</h4>
-            <h3 class="content-subhead">Current Fermentation Temperature: 68F</h3>
+            <h3 id="latest_temp">Latest Fermentation Temperature: </h3>
+            <script>
+                Sijax.request('update_ferm_temp') <!-- initial load -->
+                setInterval(function(){
+                    Sijax.request('update_ferm_temp')
+                },2000);
+            </script>
         </div><!--header -->
     </div><!--banner -->
 

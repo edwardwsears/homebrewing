@@ -179,13 +179,43 @@ def serve_page_brewing_update_tap():
     db_execute("update keg set last_pour_time=DateTime('now') where name=\"" + beerOnTap[0]['name'] + "\"")
     return jsonify(result=True)
 
-@app.route('/fermenting.html')
+@flask_sijax.route(app, '/fermenting.html')
 def serve_page_brewing_fermenting():
+    def update_ferm_temp_handler(obj_response):
+        tempList = db_execute("SELECT * FROM temperatures ORDER BY date(timestamp)")
+        tempDatetimeStr = datetime_to_string(datetime_pst(datetime_from_sqlite(tempList[0]['timestamp'])))
+        tempString = "Latest Fermentation Temperature: <br>"+str(tempList[0]['temperature'])+"F at "+tempDatetimeStr
+        obj_response.html("#latest_temp",tempString)
+
+    if g.sijax.is_sijax_request:
+        # Sijax request detected - let Sijax handle it
+        g.sijax.set_request_uri('/fermenting.html')
+        g.sijax.register_callback('update_ferm_temp', update_ferm_temp_handler)
+        return g.sijax.process_request()
+
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
+    tempList = db_execute("SELECT * FROM temperatures ORDER BY date(timestamp) desc limit 24")
+    formattedTempList = []
+    for temp in tempList:
+        dt_temp = datetime_from_sqlite(temp['timestamp'])
+        formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':int(temp['temperature'])})
     if (len(brewName)==1):
-        return render_template('fermenting.html', name=brewName[0])
+        return render_template('fermenting.html', name=brewName[0], tempList=formattedTempList)
     else:
-        return render_template('fermenting.html', name="Nothing")
+        return render_template('fermenting.html', name="Nothing", tempList=formattedTempList)
+
+@app.route('/update_temp.html',methods=['POST'])
+def serve_page_brewing_update_temp():
+    first = request.form['first']
+    temp = request.form['temp']
+
+    if (first):
+        #clear table
+        db_execute("delete from temperature")
+
+    # add temp
+    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+")")
+    return jsonify(result=True)
 
 @app.route('/brews.html')
 def serve_page_brewing_brews():
