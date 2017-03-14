@@ -13,7 +13,7 @@ from decimal import *
 from pytz import timezone
 
 #config
-DATABASE='brew_server.sql'
+DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
 DEBUG=True
 SECRET_KEY='key'
 USERNAME='esears'
