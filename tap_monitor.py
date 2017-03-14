@@ -20,6 +20,7 @@ def Main():
 
     tapOpened = False
     calibrated = False
+    accelReadSuccess = False
     tapOpenedTime = 0
     tapClosedTime = 0
     calibrationSizeOz = 16
@@ -27,7 +28,14 @@ def Main():
 
     while True:
 
-        tapAxes = tapAccel.getAxes(True)
+        accelReadSuccess = False
+        while (accelReadSuccess == False):
+            try:
+                tapAxes = tapAccel.getAxes(True)
+                accelReadSuccess = True
+            except IOError:
+                sleep(1)
+
         tapCurrPos = tapAxes['z']
 
         if (tapOpened):
@@ -67,7 +75,7 @@ def Main():
 ### END MAIN ####################################################
 
 def send_oz_post(val):
-    r = requests.post("http://127.0.0.1:5000/brewing/update_tap.html", data={'oz_poured': val})
+    r = requests.post("http://ec2-52-40-75-70.us-west-2.compute.amazonaws.com/update_tap.html", data={'oz_poured': val})
 
 if __name__ == "__main__":  
     try:  
