@@ -49,9 +49,14 @@ def teardown_request(exception):
 @app.route('/')
 @app.route('/index.html')
 def serve_page_index():
-    return render_template('index.html',)
+    beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+    bottleData = db_execute("SELECT * FROM bottles")
+    brewData = db_execute("SELECT * FROM brews")
 
-@flask_sijax.route(app, '/brewing/on_tap.html')
+    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+
+@flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
     def update_beers_left_handler(obj_response):
         beerOnTap = db_execute("select name,style from brews where on_tap=1")
@@ -143,7 +148,7 @@ def serve_page_brewing_on_tap():
 
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
-        g.sijax.set_request_uri('/brewing/on_tap.html')
+        g.sijax.set_request_uri('/on_tap.html')
         g.sijax.register_callback('update_beers_left', update_beers_left_handler)
         g.sijax.register_callback('update_oz_left', update_oz_left_handler)
         g.sijax.register_callback('update_beers_left_pic', update_beers_left_pic_handler)
@@ -157,9 +162,9 @@ def serve_page_brewing_on_tap():
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
 
-    return render_template('brewing/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
 
-@app.route('/brewing/update_tap.html',methods=['POST'])
+@app.route('/update_tap.html',methods=['POST'])
 def serve_page_brewing_update_tap():
     ozPoured = request.form['oz_poured']
     beerOnTap = db_execute("select name,style from brews where on_tap=1")
@@ -174,23 +179,26 @@ def serve_page_brewing_update_tap():
     db_execute("update keg set last_pour_time=DateTime('now') where name=\"" + beerOnTap[0]['name'] + "\"")
     return jsonify(result=True)
 
-@app.route('/brewing/fermenting.html')
+@app.route('/fermenting.html')
 def serve_page_brewing_fermenting():
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
-    return render_template('brewing/fermenting.html', name=brewName[0])
+    if (len(brewName)==1):
+        return render_template('fermenting.html', name=brewName[0])
+    else:
+        return render_template('fermenting.html', name="Nothing")
 
-@app.route('/brewing/brews.html')
+@app.route('/brews.html')
 def serve_page_brewing_brews():
-    return render_template('brewing/brews.html',)
+    return render_template('brews.html',)
 
-@app.route('/brewing/brew_tech.html')
+@app.route('/brew_tech.html')
 def serve_page_brewing_brew_tech():
-    return render_template('brewing/brew_tech.html',)
+    return render_template('brew_tech.html',)
 
-@app.route('/brewing/add_brew.html',methods=['GET', 'POST'])
+@app.route('/add_brew.html',methods=['GET', 'POST'])
 def serve_page_brewing_add_brew():
     if not session.get('logged_in'):
-      return render_template('brewing/login.html',)
+      return render_template('login.html',)
     else:
       print "BEFORE POST\n";
       print "request.method: " + request.method
@@ -205,9 +213,9 @@ def serve_page_brewing_add_brew():
         print "IN POST 3\n";
         flash('New entry was successfully posted')
         print "IN POST 4\n";
-      return render_template('brewing/add_brew.html',)
+      return render_template('add_brew.html',)
 
-@app.route('/brewing/login.html', methods=['GET', 'POST'])
+@app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():
     error = None
     if request.method == 'POST':
@@ -221,7 +229,7 @@ def serve_page_brewing_login():
             session['logged_in'] = True
             flash('You were logged in')
             return redirect(url_for('serve_page_brewing_add_brew'))
-    return render_template('brewing/login.html', error=error)
+    return render_template('login.html', error=error)
 
 @app.route('/brewing/logout')
 def brewing_logout():
