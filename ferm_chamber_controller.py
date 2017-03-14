@@ -92,7 +92,7 @@ def Main():
     print "Chamber State: " + str(CHAMBER_STATE) + "\n\n"
 
     #update db
-    if ((datetime.datetime.now() - last_update).minutes > 30):
+    if ((datetime.datetime.now() - last_update).seconds > (30*60)):
         update_db(curr_beer_temp,False)
 
     #update averages
@@ -170,13 +170,7 @@ def Main():
           
 ### END MAIN ####################################################
 
-if __name__ == "__main__":  
-  try:  
-    Main()  
-  except KeyboardInterrupt:  
-    temp_control_lib.io.cleanup()  
-
-def update_db(temp,firs_reading):
+def update_db(temp,first_reading):
     if (first_reading):
         send_temp_post(temp,True)
     else:
@@ -184,3 +178,10 @@ def update_db(temp,firs_reading):
 
 def send_temp_post(temp,first):
     r = requests.post("http://ec2-52-40-75-70.us-west-2.compute.amazonaws.com/update_temp.html", data={'temp' : temp,'first':first})
+
+if __name__ == "__main__":  
+  try:  
+    Main()  
+  except KeyboardInterrupt:  
+    temp_control_lib.io.cleanup()  
+

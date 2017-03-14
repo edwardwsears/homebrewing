@@ -211,7 +211,7 @@ def serve_page_brewing_update_temp():
 
     if (first):
         #clear table
-        db_execute("delete from temperature")
+        db_execute("delete from temperatures")
 
     # add temp
     db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+")")
