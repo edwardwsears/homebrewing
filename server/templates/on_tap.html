@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Shows stats for the current brew on tap">
+
+    <title>On Tap</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/grids-responsive-min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_tap.css') }}">
+
+
+    <!-- Beer Level animation  -->
+    <!-- TODO back to this..<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script> -->
+    <script src="{{ url_for('static', filename='jquery-1.11.2.min.js') }}"></script>
+    <script type="text/javascript"
+        src="/static/js/sijax/sijax.js"></script>
+    <script type="text/javascript">
+        {{ g.sijax.get_js()|safe }}
+    </script>
+
+</head>
+<body>
+    <div class="header">
+        <div class="pure-menu pure-menu-horizontal">
+            <a class="pure-menu-heading" href="index.html">Sears Beers</a>
+
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
+                <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
+                <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
+            </ul>
+        </div>
+    </div> <!-- menu -->
+
+<div id="layout">
+
+    <div id="main" class=main>
+        <div id="banner" class=banner>
+            <div class="banner-head">
+            <h1>On Tap</h1>
+          </div> <!-- pure-u -->
+        </div> <!-- pure-g -->
+        <div class="pure-g" >
+            <div class="pure-u-1-24"> </div>
+            <div class="pure-u-22-24">
+    <!-- ****************** ON TAP ********************-->
+            <table class="pure-table pure-table-bordered">
+                <thead>
+                    <tr>
+                        <th>Beer Name and Style </th>
+                        <th>Keg Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td width="50%">
+                            <h1> {{kegData['name']}} </h1>
+                            <h4> 
+                                {{beerOnTap['description']}}
+                            </h4>
+                            <h4> 
+                                Style: {{beerOnTap['style']}} <br>
+                                OG: {{beerOnTap['og']}} <br>
+                                ABV: {{beerOnTap['abv']}} <br>
+                                IBU: {{beerOnTap['ibu']}} <br>
+                                Brew Date: {{beerOnTap['brew_date']}}
+                            </h4>
+                        </td>
+
+                        <td>
+                            <div class="pure-g">
+                                <div class="pure-u-1 pure-u-md-1-2">
+                                    <h3 id="keg_stats" style="white-space:nowrap"> </h3>
+                                    <script>
+                                        Sijax.request('update_keg_stats') <!-- initial load -->
+                                        setInterval(function(){
+                                            Sijax.request('update_keg_stats')
+                                        },2000);
+                                    </script>
+                                    <br>
+                                    <h3 id="last_pour_stats" > </h3>
+                                    <script>
+                                        Sijax.request('update_last_pour_stats') <!-- initial load -->
+                                        setInterval(function(){
+                                            Sijax.request('update_last_pour_stats')
+                                        },2000);
+                                    </script> 
+                                </div>
+                                <div class="pure-u-1 pure-u-md-1-2" style="text-align:center">
+                                    <h4 id=beers_left> Beers Left: </h3>
+                                    <img id="keg_pic" style='height:10em;width:10em'>
+                                    <h4 id=oz_left> 10/100 fl oz</h3>
+                                    <script>
+                                      Sijax.request('update_beers_left_pic');
+                                      Sijax.request('update_beers_left');
+                                      Sijax.request('update_oz_left');
+                                      setInterval(function(){
+                                          Sijax.request('update_beers_left_pic');
+                                          Sijax.request('update_beers_left');
+                                          Sijax.request('update_oz_left');
+                                      },2000);
+                                    </script>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+     <!-- *********** end ON TAP ******************* -->
+    <!-- ****************** Bottles ********************-->
+            <div class="pure-g">
+              <div class="pure-u-1">
+                <h1>In Bottles</h1>
+              </div> <!-- pure-u -->
+            </div> <!-- pure-g -->
+                <table class="pure-table pure-table-horizontal">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Style</th>
+                            <th>ABV</th>
+                            <th>Date Brewed</th>
+                            <th>Number of Bottles</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for brew in brewData %}
+                            {% if brew['in_bottles'] == 1 %}
+                        <tr>
+                            <td>{{brew['name']}}</td>
+                            <td>{{brew['style']}}</td>
+                            <td>{{brew['abv']}}</td>
+                            <td>{{brew['brew_date']}}</td>
+                            <td>
+                                <table class="pure-table pure-table-horizontal">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                <a id=brew_{{brew['id']}}_bottles_left_12oz> </a>
+                                <script>
+                                    Sijax.request('update_bottles_left',[{{brew['id']}}, 12,0])
+                                    setInterval(function(){
+                                        Sijax.request('update_bottles_left',[{{brew['id']}}, 12,0])
+                                    },2000);
+                                </script>
+                                            </td>
+                                            <td>
+                                <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12,-1])" >-</a>
+                                <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12,1])" >+</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                <a id=brew_{{brew['id']}}_bottles_left_22oz> </a>
+                                <script>
+                                    Sijax.request('update_bottles_left',[{{brew['id']}}, 22,0])
+                                    setInterval(function(){
+                                        Sijax.request('update_bottles_left',[{{brew['id']}}, 22,0])
+                                    },2000);
+                                </script>
+                                            </td>
+                                            <td>
+                                <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22,-1])" >-</a>
+                                <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22,1])" >+</a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+     <!-- *********** end BOTTLES ******************* -->
+            </div> <!-- pure-u-3-4 -->
+            <div class="pure-u-1-24"> </div>
+        </div> <!-- main pure-g -->
+    </div> <!-- main -->
+</div> <!-- layout -->
+
+
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+
+
+</body>
+</html>

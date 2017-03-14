@@ -23,3 +23,15 @@ To run:
  %> . venv/bin/activate
  %>  python brew_server.py
 Runs on: http://127.0.0.1:5000/
+
+ssh to aws instance:
+%> ssh -i "searsbeersssh.pem" ubuntu@ec2-52-40-75-70.us-west-2.compute.amazonaws.com
+
+setup webserver:
+http://www.datasciencebytes.com/bytes/2015/02/24/running-a-flask-app-on-aws-ec2/
+
+Tap Handle Sensor Monitor:
+ %> git clone --recursive https://github.com/WiringPi/WiringPi-Python.git
+ %> cd WiringPi-Python/
+ %> sudo apt-get install python-dev python-setuptools swig
+ %> ./build
