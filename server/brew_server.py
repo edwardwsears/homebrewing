@@ -53,8 +53,9 @@ def serve_page_index():
     kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
+    tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 1")
 
-    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData, tempList=tempList)
 
 @flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
@@ -100,7 +101,6 @@ def serve_page_brewing_on_tap():
         nextBottles = currentBottles[0][bottleSizeName] + value
         if (nextBottles<0):
             nextBottles = 0
-        print("current: "+str(currentBottles[0][bottleSizeName])+" next: "+str(nextBottles))
         db_execute("update bottles set "+bottleSizeName+"="+str(nextBottles)+" where id=\"" + str(bottleId) + "\"")
         #display new value
         idName = "#brew_" + str(bottleId) + "_bottles_left_" +str(size)+"oz"
@@ -182,9 +182,9 @@ def serve_page_brewing_update_tap():
 @flask_sijax.route(app, '/fermenting.html')
 def serve_page_brewing_fermenting():
     def update_ferm_temp_handler(obj_response):
-        tempList = db_execute("SELECT * FROM temperatures ORDER BY date(timestamp)")
+        tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc")
         tempDatetimeStr = datetime_to_string(datetime_pst(datetime_from_sqlite(tempList[0]['timestamp'])))
-        tempString = "Latest Fermentation Temperature: <br>"+str(tempList[0]['temperature'])+"F at "+tempDatetimeStr
+        tempString = "Latest Fermentation Temperature: <br>"+str(tempList[0]['temperature'])+"&degF at "+tempDatetimeStr
         obj_response.html("#latest_temp",tempString)
 
     if g.sijax.is_sijax_request:
@@ -194,11 +194,11 @@ def serve_page_brewing_fermenting():
         return g.sijax.process_request()
 
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
-    tempList = db_execute("SELECT * FROM temperatures ORDER BY date(timestamp) desc limit 24")
+    tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 96")
     formattedTempList = []
     for temp in tempList:
         dt_temp = datetime_from_sqlite(temp['timestamp'])
-        formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':int(temp['temperature'])})
+        formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
     if (len(brewName)==1):
         return render_template('fermenting.html', name=brewName[0], tempList=formattedTempList)
     else:
@@ -209,17 +209,18 @@ def serve_page_brewing_update_temp():
     first = request.form['first']
     temp = request.form['temp']
 
-    if (first):
+    if (first==True):
         #clear table
-        db_execute("delete from temperatures")
+        db_execute("delete from temperatures;")
 
     # add temp
-    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+")")
+    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
     return jsonify(result=True)
 
 @app.route('/brews.html')
 def serve_page_brewing_brews():
-    return render_template('brews.html',)
+    brews = db_execute("SELECT * FROM brews")
+    return render_template('brews.html',brews=brews)
 
 @app.route('/brew_tech.html')
 def serve_page_brewing_brew_tech():
@@ -230,19 +231,13 @@ def serve_page_brewing_add_brew():
     if not session.get('logged_in'):
       return render_template('login.html',)
     else:
-      print "BEFORE POST\n";
-      print "request.method: " + request.method
       if request.method == 'GET':
         null=1; ##do nothing
       elif request.method == 'POST':
-        print "IN POST\n";
         ##g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',["IPA 3", "IPA","2012-1-1",0,0,1])
         g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
-        print "IN POST 2\n";
         g.db.commit()
-        print "IN POST 3\n";
         flash('New entry was successfully posted')
-        print "IN POST 4\n";
       return render_template('add_brew.html',)
 
 @app.route('/login.html', methods=['GET', 'POST'])

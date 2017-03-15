@@ -56,23 +56,13 @@ p {
 }
 
     .banner-head {
+        display: table-cell;
         vertical-align: middle;
         margin-bottom: 0;
-        margin-top: 90px;
         font-size: 2em;
         color: white;
         font-weight: 500;
         text-shadow: 0 1px 1px black;
-    }
-    .banner-subhead {
-        vertical-align: middle;
-        margin-bottom: 0;
-        margin-top: 30px;
-        font-size: 2em;
-        color: white;
-        font-weight: 200;
-        text-shadow: 0 1px 1px black;
-        height: 150px;
     }
 
 
@@ -83,7 +73,6 @@ p {
  */
  .landing-tables,
  .information {
-    max-width: 980px;
     margin: 0 auto;
  }
 .landing-tables {
@@ -98,7 +87,7 @@ p {
 .landing-table {
     border: 1px solid #ddd;
     margin: 0 0.5em 2em;
-    padding: 0 0 3em;
+    padding: 0 0 0;
 }
 
 /*

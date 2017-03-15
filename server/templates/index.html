@@ -31,9 +31,11 @@
 
     <div class="banner">
         <h1 class="banner-head">
-            Sears Beers<br>
-            Your source for all things Sears and Beers
+            Sears Beers <br>
         </h1>
+        <p class="banner-subhead">
+            The Official Source for all things Sears <em>and</em> Beers
+        </p>
     </div>
 <div class="l-content">
     <div class="landing-tables pure-g">
@@ -75,6 +77,7 @@
                 </div>
 
                 <ul class="landing-table-list">
+                    <li>{{tempList[0]['temperature']}}&degF</li>
                 {% for brew in brewData %}
                     {% if brew['fermenting'] == 1 %}
                     <li>{{brew['name']}}</li>
