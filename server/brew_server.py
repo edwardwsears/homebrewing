@@ -113,7 +113,7 @@ def serve_page_brewing_on_tap():
         kegStatsString = ""
 
         #days since tap
-        daysSinceTap = (datetime.now() - datetime.strptime(kegData[0]['tap_date'],"%Y-%m-%d")).days
+        daysSinceTap = (datetime.now() - datetime.strptime(kegData[0]['tap_date'],"%Y-%m-%d")).days + 1
         daysSinceTapString = "Days Since Tap: "+str(daysSinceTap)
         kegStatsString +=  daysSinceTapString + "<br>"
 
@@ -127,11 +127,17 @@ def serve_page_brewing_on_tap():
         kegStatsString +=  beersPerDayString + "<br>"
 
         # Est empty date
-        daysUntilEmpty = int(kegData[0]['current_volume']/ozPerDayConsumed)
-        daysUntilEmptyString = "Est Days Until Empty: "+str(daysUntilEmpty)
-        kegStatsString +=  daysUntilEmptyString + "<br>"
-        daysUntilBrewString = "Need to Brew in: "+str(daysUntilEmpty-14)+" days"
-        kegStatsString +=  daysUntilBrewString + "<br>"
+        if (ozPerDayConsumed>0):
+            daysUntilEmpty = int(kegData[0]['current_volume']/ozPerDayConsumed)
+            daysUntilEmptyString = "Est Days Until Empty: "+str(daysUntilEmpty)
+            kegStatsString +=  daysUntilEmptyString + "<br>"
+            daysUntilBrewString = "Need to Brew in: "+str(daysUntilEmpty-14)+" days"
+            kegStatsString +=  daysUntilBrewString + "<br>"
+        else:
+            daysUntilEmptyString = "Est Days Until Empty: &#x221e;"
+            kegStatsString +=  daysUntilEmptyString + "<br>"
+            daysUntilBrewString = "Need to Brew in: &#x221e; days"
+            kegStatsString +=  daysUntilBrewString + "<br>"
 
         obj_response.html("#keg_stats",kegStatsString)
 
