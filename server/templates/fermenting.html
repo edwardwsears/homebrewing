@@ -84,22 +84,34 @@
 
 
     <div id="main" class=main>
+
+        <!-- ***************** Temperature graph **************************-->
         <div class="pure-g" >
             <div class="pure-u-1-24"> </div>
             <div class="pure-u-22-24">
-                <!-- Temperature graph -->
                 <div id="chartContainer" style="height: 300px; width: 100%;">
                 </div>
 
             </div><!--pure-u-22-24 -->
             <div class="pure-u-1-24"> </div>
         </div><!--pure-g -->
+
+        <!-- ************** End Temperature graph **************************-->
+        <!-- ************** begin stats **************************-->
+        <div class="pure-g" style="text-align:center">
+            <div class="pure-u-1 pure-u-md-1-3">
+                <h3> Chamber Average Temp: {{fermStats[0]['avg']}} </h3>
+            </div>
+            <div class="pure-u-1 pure-u-md-1-3">
+                <h3> Chamber Set Temp: {{fermStats[0]['set_temp']}} </h3>
+            </div>
+            <div class="pure-u-1 pure-u-md-1-3">
+                <h3> Chamber Set Range: {{fermStats[0]['set_range']}} </h3>
+            </div>
+        </div><!--pure-g -->
+        <!-- ************** end stats **************************-->
+
     </div><!--main -->
-
-
-
-
-
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 

@@ -195,14 +195,15 @@ def serve_page_brewing_fermenting():
 
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
     tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 96")
+    fermStats = db_execute("SELECT * FROM chamber")
     formattedTempList = []
     for temp in tempList:
         dt_temp = datetime_from_sqlite(temp['timestamp'])
         formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
     if (len(brewName)==1):
-        return render_template('fermenting.html', name=brewName[0], tempList=formattedTempList)
+        return render_template('fermenting.html', name=brewName[0], tempList=formattedTempList, fermStats=fermStats)
     else:
-        return render_template('fermenting.html', name="Nothing", tempList=formattedTempList)
+        return render_template('fermenting.html', name="Nothing", tempList=formattedTempList, fermStats=fermStats)
 
 @app.route('/update_temp.html',methods=['POST'])
 def serve_page_brewing_update_temp():
@@ -217,8 +218,49 @@ def serve_page_brewing_update_temp():
     db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
     return jsonify(result=True)
 
-@app.route('/brews.html')
+@flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
+    def update_display_recipe_handler(obj_response,id):
+        displayBrew = db_execute("SELECT * FROM brews where id="+str(id))
+        scriptStr = """
+            $("#statTable").html("\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                        <th>Beer Stats </th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                    <tr>\
+                        <td >\
+                            <h1> """+displayBrew[0]['name']+""" </h1>\
+                            <h4>\
+                                """+displayBrew[0]['description']+"""\
+                            </h4>\
+                            <h4>\
+                                Style: """+displayBrew[0]['style']+""" <br>\
+                                OG: """+displayBrew[0]['og']+""" <br>\
+                                ABV: """+displayBrew[0]['abv']+""" <br>\
+                                IBU: """+displayBrew[0]['ibu']+""" <br>\
+                                Brew Date: """+displayBrew[0]['brew_date']+"""\
+                            </h4>\
+                        </td>\
+                    </tr>\
+                </tbody>\
+            </table>\
+            ");
+            // scroll
+            $('html, body').animate({
+                scrollTop: $('#statTable').offset().top
+            }, 'slow');
+        """
+        print scriptStr
+        obj_response.script(scriptStr)
+    if g.sijax.is_sijax_request:
+        # Sijax request detected - let Sijax handle it
+        g.sijax.set_request_uri('/brews.html')
+        g.sijax.register_callback('update_display_recipe', update_display_recipe_handler)
+        return g.sijax.process_request()
     brews = db_execute("SELECT * FROM brews")
     return render_template('brews.html',brews=brews)
 
