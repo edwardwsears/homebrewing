@@ -42,7 +42,7 @@
             //lineThickness: 3,
             dataPoints: [
             {% for temp in tempList %}
-            { x: new Date(Date.UTC ({{temp['year']}}, {{temp['month']}}, {{temp['day']}}, {{temp['hour']}},{{temp['minute']}}) ),   y: {{temp['temp']}} },
+            { x: new Date(Date.UTC ({{temp['year']}}, {{temp['month']}}-1, {{temp['day']}}, {{temp['hour']}},{{temp['minute']}}) ),   y: {{temp['temp']}} },
             {% endfor %}
             ]
           }
