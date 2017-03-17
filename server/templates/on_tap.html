@@ -31,6 +31,12 @@
                 <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
                 <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
                 <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
+                <li class="pure-menu-item pure-menu-disabled"></li>
+{% if session['logged_in'] %}
+                <li class="pure-menu-item"><a href="logout.html" class="pure-menu-link">Log Out</a></li>
+{% else %}
+                <li class="pure-menu-item"><a href="login.html" class="pure-menu-link">Log In</a></li>
+{% endif %}
             </ul>
         </div>
     </div> <!-- menu -->
@@ -150,8 +156,10 @@
                                 </script>
                                             </td>
                                             <td>
+                                {% if session['logged_in'] %}
                                 <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12,-1])" >-</a>
                                 <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 12,1])" >+</a>
+                                {% endif %}
                                             </td>
                                         </tr>
                                         <tr>
@@ -165,8 +173,10 @@
                                 </script>
                                             </td>
                                             <td>
+                                {% if session['logged_in'] %}
                                 <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22,-1])" >-</a>
                                 <a class="button-choose pure-button" onclick="Sijax.request('update_bottles_left',[{{brew['id']}}, 22,1])" >+</a>
+                                {% endif %}
                                             </td>
                                         </tr>
                                     </tbody>

@@ -32,6 +32,12 @@
                 <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
                 <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
                 <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
+                <li class="pure-menu-item pure-menu-disabled"></li>
+{% if session['logged_in'] %}
+                <li class="pure-menu-item"><a href="logout.html" class="pure-menu-link">Log Out</a></li>
+{% else %}
+                <li class="pure-menu-item"><a href="login.html" class="pure-menu-link">Log In</a></li>
+{% endif %}
             </ul>
         </div>
     </div>
@@ -181,11 +187,23 @@
 </div> <!-- end tables -->
 
 <div class="pure-g" >
-    <div class="pure-u-1-24"> </div>
 <!-- ****************** Beer Stats ********************-->
+    <div class="pure-u-1-24"> </div>
     <div id="statTable" class="pure-u-22-24">
-    </div> <!-- pure-u-3-4 -->
+    </div> <!-- pure-u -->
+    <div class="pure-u-1-24"> </div>
 <!-- *********** end Beer Stats ******************* -->
+
+    <div class="pure-u-1-24"> </div>
+    <div id="hopsTable" class="pure-u-11-24">
+    </div> <!-- pure-u -->
+    <div id="grainTable" class="pure-u-11-24">
+    </div> <!-- pure-u -->
+    <div class="pure-u-1-24"> </div>
+
+    <div class="pure-u-1-24"> </div>
+    <div id="yeastTable" class="pure-u-11-24">
+    </div> <!-- pure-u -->
     <div class="pure-u-1-24"> </div>
 </div> <!-- main pure-g -->
 <br>

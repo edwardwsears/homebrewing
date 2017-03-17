@@ -16,8 +16,8 @@ from pytz import timezone
 DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
 DEBUG=True
 SECRET_KEY='key'
-USERNAME='esears'
-PASSWORD='esears'
+USERNAME='sears'
+PASSWORD='beers'
 
 path = os.path.join('.', os.path.dirname(__file__), 'static/js/sijax/')
 
@@ -259,8 +259,90 @@ def serve_page_brewing_brews():
             $('html, body').animate({
                 scrollTop: $('#statTable').offset().top
             }, 'slow');
+            """
+        ########################### BEGIN Grain ###################################
+        displayGrain = db_execute("SELECT * FROM grain where id="+str(id)+" order by amount_lbs desc")
+        scriptStr += """
+            $("#grainTable").html("\
+            <br><h3>Grain:</h3>\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                        <th>Grain Type </th>\
+                        <th>Amount in Lbs </th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                """
+        for grain in displayGrain:
+            scriptStr += """\
+                        <tr>\
+                            <td> """+grain['type']+"""</td>\
+                            <td> """+str(grain['amount_lbs'])+"""</td>\
+                        </tr>\
+                    """
+        scriptStr += """\
+                </tbody>\
+            </table>\
+            ");
+            """
+        ########################### END HOPS ###################################
+        ########################### BEGIN HOPS ###################################
+        displayHops = db_execute("SELECT * FROM hops where id="+str(id)+" order by boil_minutes desc")
+        scriptStr += """
+            $("#hopsTable").html("\
+            <br><h3>Hops:</h3>\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                        <th>Hop Type </th>\
+                        <th>Amount in oz </th>\
+                        <th>Boil Minutes </th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                """
+        for hop in displayHops:
+            scriptStr += """\
+                        <tr>\
+                            <td> """+hop['hop_name']+"""</td>\
+                            <td> """+hop['oz_amount']+"""</td>\
+                            <td> """+hop['boil_minutes']+"""</td>\
+                        </tr>\
+                    """
+        scriptStr += """\
+                </tbody>\
+            </table>\
+            ");
+            """
+        ########################### END HOPS ###################################
+        ########################### BEGIN yeast ###################################
+        displayYeast = db_execute("SELECT * FROM yeast where id="+str(id))
+        scriptStr += """
+            $("#yeastTable").html("\
+            <br><h3>Yeast:</h3>\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                        <th>Yeast Type </th>\
+                        <th>Fermentation Temperature </th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                    <tr>\
+            """
+        if (len(displayYeast)>0):
+            scriptStr += """\
+                        <td> """+displayYeast[0]['yeast_type']+"""</td>\
+                        <td> """+str(displayYeast[0]['temp'])+"""</td>\
+                """
+        scriptStr += """\
+                </tr>\
+            </tbody>\
+        </table>\
+        ");
         """
-        print scriptStr
+        ########################### END YEAST ###################################
         obj_response.script(scriptStr)
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
@@ -301,14 +383,14 @@ def serve_page_brewing_login():
         else:
             session['logged_in'] = True
             flash('You were logged in')
-            return redirect(url_for('serve_page_brewing_add_brew'))
+            return redirect(url_for('serve_page_index'))
     return render_template('login.html', error=error)
 
-@app.route('/brewing/logout')
+@app.route('/logout.html')
 def brewing_logout():
     session.pop('logged_in', None)
     flash('You were logged out')
-    return redirect(url_for('serve_page_brewing_login'))
+    return redirect(url_for('serve_page_index'))
 
 ### Helper fns #######################
 def db_execute(query):

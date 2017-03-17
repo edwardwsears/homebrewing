@@ -2,79 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Brew Tech.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Landing page for searsbeers.com.">
 
-    <title>Brew Tech</title>
+    <title>Sears Beers</title>
 
-    
-
-
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
-
-
-
-
-
-
-
-  
-    <!--[if lte IE 8]>
-        <link rel="stylesheet" href="css/layouts/side-menu-old-ie.css">
-    <![endif]-->
-    <!--[if gt IE 8]><!-->
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/side-menu.css') }}">
-    <!--<![endif]-->
-  
-
-
-    
-
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery-grid.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_landing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/grids-responsive-min.css') }}">
 
 </head>
 <body>
 
-
-
-
-
-
-<div id="layout">
-    <!-- Menu toggle -->
-    <a href="#menu" id="menuLink" class="menu-link">
-        <!-- Hamburger icon -->
-        <span></span>
-    </a>
-
-    <div id="menu">
-        <div class="pure-menu">
-            <a class="pure-menu-heading" href="../index.html">Brewing</a>
+<div id="main">
+<div>
+    <div class="header">
+        <div class="pure-menu pure-menu-horizontal">
+            <a class="pure-menu-heading" href="index.html">Sears Beers</a>
 
             <ul class="pure-menu-list">
                 <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
                 <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
                 <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
-                <li class="pure-menu-item "><a href="brew_tech.html" class="pure-menu-link">Brew Tech</a></li>
                 <li class="pure-menu-item pure-menu-disabled"></li>
-                <li class="pure-menu-item pure-menu-disabled"></li>
-                <li class="pure-menu-item pure-menu-disabled"></li>
-                <li class="pure-menu-item pure-menu-selected"><a href="add_brew.html" class="pure-menu-link">Add Brew</a></li>
-
-
+{% if session['logged_in'] %}
+                <li class="pure-menu-item"><a href="logout.html" class="pure-menu-link">Log Out</a></li>
+{% else %}
+                <li class="pure-menu-item"><a href="login.html" class="pure-menu-link">Log In</a></li>
+{% endif %}
             </ul>
         </div>
     </div>
-
-    <div id="main">
-        <div class="header">
-            <h1>Are you Eddie though??</h1>
-        </div>
+    <div class="banner">
+        <h1 class="banner-head">
+            Are You Eddie? <br>
+        </h1>
+    </div>
 
         <div class="content">
             <div class="pure-g">
                 <div class="pure-u-1-1">
-                  <form class="pure-form pure-form-aligned" action="/brewing/login.html" method=post>
+                  <form class="pure-form pure-form-aligned" action="login.html" method=post>
                       <fieldset>
                           <div class="pure-control-group">
                               <label for="name">Username</label>
@@ -88,7 +58,7 @@
 
 
                           <div class="pure-controls">
-                              <button type="submit" class="pure-button pure-button-primary">Submit</button>
+                              <button type="submit" class="button-choose pure-button">Submit</button>
                           </div>
                       </fieldset>
                   </form>
@@ -99,12 +69,7 @@
     </div>
 </div>
 
-
-
-
-
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-
 
 </body>
 </html>
