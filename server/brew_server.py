@@ -343,6 +343,53 @@ def serve_page_brewing_brews():
         ");
         """
         ########################### END YEAST ###################################
+        ########################### BEGIN water ###################################
+        displayWater = db_execute_arg("SELECT * FROM water where profile_name=?",displayBrew[0]['water_profile'])
+        scriptStr += """
+            $("#waterTable").html("\
+            """
+        if (len(displayWater)>0):
+            scriptStr += """\
+            <br><h3>Water Additions:</h3>\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                    <th></td>\
+                    <th></td>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                <tr>\
+                    <td>Profile Name</td>\
+                    <td> """+displayWater[0]['profile_name']+"""</td>\
+                </tr>\
+                <tr>\
+                    <td>Base Water</td>\
+                    <td> """+displayWater[0]['base_water']+"""</td>\
+                </tr>\
+                <tr>\
+                    <td>Baking Soda Addition</td>\
+                    <td> """+displayWater[0]['baking_soda']+"""</td>\
+                </tr>\
+                <tr>\
+                    <td>Gypsum Addition</td>\
+                    <td> """+displayWater[0]['gypsum']+"""</td>\
+                </tr>\
+                <tr>\
+                    <td>CaCl Addition</td>\
+                    <td> """+displayWater[0]['CaCl']+"""</td>\
+                </tr>\
+                <tr>\
+                    <td>Campden Addition</td>\
+                    <td> """+displayWater[0]['campden']+"""</td>\
+                </tr>\
+            </tbody>\
+        </table>\
+                """
+        scriptStr += """\
+        ");
+        """
+        ########################### END YEAST ###################################
         obj_response.script(scriptStr)
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
@@ -395,6 +442,12 @@ def brewing_logout():
 ### Helper fns #######################
 def db_execute(query):
     cur = g.db.execute(query)
+    queryData = cur.fetchall()
+    g.db.commit()
+    return queryData
+
+def db_execute_arg(query,arg):
+    cur = g.db.execute(query,[arg])
     queryData = cur.fetchall()
     g.db.commit()
     return queryData
