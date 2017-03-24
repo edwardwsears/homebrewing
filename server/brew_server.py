@@ -13,7 +13,12 @@ from decimal import *
 from pytz import timezone
 
 #config
-DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
+localTest = True;
+if (localTest):
+    DATABASE='brew_server.sql'
+else:
+    DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
+
 DEBUG=True
 SECRET_KEY='key'
 USERNAME='sears'
@@ -412,8 +417,7 @@ def serve_page_brewing_add_brew():
         null=1; ##do nothing
       elif request.method == 'POST':
         ##g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',["IPA 3", "IPA","2012-1-1",0,0,1])
-        g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
-        g.db.commit()
+        #g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
         flash('New entry was successfully posted')
       return render_template('add_brew.html',)
 
