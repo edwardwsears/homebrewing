@@ -120,14 +120,20 @@
                     <form class="pure-form" method="post" >
                       <fieldset>
                         <h3>Change Temp:</h3>
+                        <h4> Chamber Set Temp: <input name="set_temp" class="pure-u-2-24" type="text" required> </h4>
+                        <h4> Chamber Set Range: <input name="set_range" class="pure-u-2-24" type="text" required> </h4>
                         <h4> Chamber Temp Control On: 
                           <select name="temp_control_on" class="pure-input-2-24" required>
                               <option>On</option>
                               <option>Off</option>
                           </select>
                         </h4>
-                        <h4> Chamber Set Temp: <input name="set_temp" class="pure-u-2-24" type="text" required> </h4>
-                        <h4> Chamber Set Range: <input name="set_range" class="pure-u-2-24" type="text" required> </h4>
+                        <h4> Temperature History Reset: 
+                          <select name="temp_history_reset" class="pure-input-2-24" required>
+                              <option>False</option>
+                              <option>True</option>
+                          </select>
+                        </h4>
                         <button type="submit" class="pure-button pure-button-primary">Set</button>
                       </fieldset>
                     </form>

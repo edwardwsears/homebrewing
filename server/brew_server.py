@@ -205,13 +205,15 @@ def serve_page_brewing_fermenting():
         return g.sijax.process_request()
 
     if request.method == 'POST':
-        g.db.execute('update chamber set set_temp = ?',[request.form['set_temp']])
-        g.db.execute('update chamber set set_range = ?',[request.form['set_range']])
+        db_execute_args('update chamber set set_temp = ?',[request.form['set_temp']])
+        db_execute_args('update chamber set set_range = ?',[request.form['set_range']])
         if (request.form['temp_control_on'] == "On"):
             temp_control_num = 1
         else:
             temp_control_num = 0
-        g.db.execute('update chamber set temp_control_on = ?',[temp_control_num])
+        if (request.form['temp_history_reset'] == "True"):
+            db_execute("delete from temperatures;")
+        db_execute_args('update chamber set temp_control_on = ?',[temp_control_num])
         flash('Temp Changed')
 
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
@@ -222,7 +224,7 @@ def serve_page_brewing_fermenting():
         dt_temp = datetime_from_sqlite(temp['timestamp'])
         formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
     if (len(brewName)==1):
-        return render_template('fermenting.html', name=brewName[0], tempList=formattedTempList, fermStats=fermStats)
+        return render_template('fermenting.html', name=brewName[0]['name'], tempList=formattedTempList, fermStats=fermStats)
     else:
         return render_template('fermenting.html', name="Nothing", tempList=formattedTempList, fermStats=fermStats)
 
@@ -361,7 +363,7 @@ def serve_page_brewing_brews():
         """
         ########################### END YEAST ###################################
         ########################### BEGIN water ###################################
-        displayWater = db_execute_arg("SELECT * FROM water where profile_name=?",displayBrew[0]['water_profile'])
+        displayWater = db_execute_args("SELECT * FROM water where profile_name=?",[displayBrew[0]['water_profile']])
         scriptStr += """
             $("#waterTable").html("\
             """
@@ -422,16 +424,49 @@ def serve_page_brewing_brew_tech():
 
 @app.route('/add_brew.html',methods=['GET', 'POST'])
 def serve_page_brewing_add_brew():
-    if not session.get('logged_in'):
-      return render_template('login.html',)
-    else:
-      if request.method == 'GET':
-        null=1; ##do nothing
-      elif request.method == 'POST':
-        ##g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',["IPA 3", "IPA","2012-1-1",0,0,1])
-        #g.db.execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form['brew-name'], request.form['brew-type'],request.form['brew-date'],0,0,1])
+    if request.method == 'POST':
+        if request.form.get('is_in_bottles'):
+            is_in_bottles = 1
+        else:
+            is_in_bottles = 0
+        if request.form.get('is_on_tap'):
+            is_on_tap = 1
+        else:
+            is_on_tap = 0
+        if request.form.get('is_fermenting'):
+            is_fermenting = 1
+        else:
+            is_fermenting = 0
+
+        # Brew data
+        db_execute_args('insert into brews values (?, ?, date(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',[request.form.get('brew-name'), request.form.get('brew-style'),request.form.get('brew-date'), is_in_bottles, is_on_tap, is_fermenting, request.form.get('brew-description'), request.form.get('brew-og'), request.form.get('brew-fg'), request.form.get('brew-abv'), request.form.get('brew-ibu'), request.form.get('brew-id'), request.form.get('brew-style_type'), request.form.get('brew-water_profile')])
+
+        index = 1
+        while (1):
+            #GRAINS
+            grainNumStr = "grain"+str(index)
+            if request.form.get(grainNumStr+'_type'):
+                db_execute_args('insert into grain values (?,?,?)',[request.form.get('brew-id'), request.form.get(grainNumStr+'_type'), request.form.get(grainNumStr+'_amount')])
+                index += 1
+            else:
+                break;
+
+        index = 1
+        while (1):
+            #HOPS
+            hopNumStr = "hop"+str(index)
+            if request.form.get(hopNumStr+'_type'):
+                db_execute_args('insert into hops values (?,?,?,?)',[request.form.get('brew-id'), request.form.get(hopNumStr+'_type'), request.form.get(hopNumStr+'_amount'), request.form.get(hopNumStr+'_mins')])
+                index += 1
+            else:
+                break;
+
+        #yeast
+        db_execute_args('insert into yeast values (?,?,?)',[request.form.get('brew-id'), request.form.get('yeast_type'), request.form.get('yeast_temp')])
+
+        #db_execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form.get('brew-name'), request.form.get('brew-type'),request.form.get('brew-date'), is_in_bottles, is_on_tap, is_fermenting])
         flash('New entry was successfully posted')
-      return render_template('add_brew.html',)
+    return render_template('add_brew.html')
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():
@@ -462,8 +497,8 @@ def db_execute(query):
     g.db.commit()
     return queryData
 
-def db_execute_arg(query,arg):
-    cur = g.db.execute(query,[arg])
+def db_execute_args(query,args):
+    cur = g.db.execute(query,args)
     queryData = cur.fetchall()
     g.db.commit()
     return queryData

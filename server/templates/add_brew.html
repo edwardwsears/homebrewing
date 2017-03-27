@@ -27,11 +27,11 @@
       $("#addGrain").click(function () {
            //grain type box
            var newTextBoxDiv = $(document.createElement("div")).attr("class", "pure-u-1-2");
-           newTextBoxDiv.after().html("<input id=\"grain"+grain_counter+"_type\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Type\">");
+           newTextBoxDiv.after().html("<input name=\"grain"+grain_counter+"_type\" id=\"grain"+grain_counter+"_type\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Type\">");
            newTextBoxDiv.appendTo("#grain_group");
            //grain amount box
            var newTextBoxDiv = $(document.createElement('div')).attr("class", "pure-u-1-2");
-           newTextBoxDiv.after().html("<input id=\"grain"+grain_counter+"_amount\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Amount (in lbs)\">");
+           newTextBoxDiv.after().html("<input name=\"grain"+grain_counter+"_amount\" id=\"grain"+grain_counter+"_amount\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Amount (in lbs)\">");
            newTextBoxDiv.appendTo("#grain_group");
            grain_counter++;
        });
@@ -50,15 +50,15 @@
       $("#addHop").click(function () {
            //hop type box
            var newTextBoxDiv = $(document.createElement("div")).attr("class", "pure-u-1-3");
-           newTextBoxDiv.after().html("<input id=\"hop"+hop_counter+"_type\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Type\">");
+           newTextBoxDiv.after().html("<input name=\"hop"+hop_counter+"_type\" id=\"hop"+hop_counter+"_type\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Type\">");
            newTextBoxDiv.appendTo("#hop_group");
            //hop amount box
            var newTextBoxDiv = $(document.createElement('div')).attr("class", "pure-u-1-3");
-           newTextBoxDiv.after().html("<input id=\"hop"+hop_counter+"_amount\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Amount (in oz)\">");
+           newTextBoxDiv.after().html("<input name=\"hop"+hop_counter+"_amount\" id=\"hop"+hop_counter+"_amount\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Amount (in oz)\">");
            newTextBoxDiv.appendTo("#hop_group");
            //hop minutes box
            var newTextBoxDiv = $(document.createElement('div')).attr("class", "pure-u-1-3");
-           newTextBoxDiv.after().html("<input id=\"hop"+hop_counter+"_mins\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Minutes\">");
+           newTextBoxDiv.after().html("<input name=\"hop"+hop_counter+"_mins\" id=\"hop"+hop_counter+"_mins\" class=\"pure-u-23-24\" type=\"text\" placeholder=\"Minutes\">");
            newTextBoxDiv.appendTo("#hop_group");
            hop_counter++;
        });
@@ -114,7 +114,7 @@
         </div>
 
         <div class="content">
-          <form class="pure-form pure-form-stacked" method="post" >
+          <form action="/add_brew.html" class="pure-form pure-form-stacked" method="post" >
               <fieldset>
 
                   <h2>Brew Name</h2>
@@ -133,7 +133,7 @@
                       </div>
                       <div class="pure-u-1">
                           <label for="brew-description">Description</label>
-                          <textarea class="pure-input-1-2" placeholder="Description" required></textarea>
+                          <textarea name="brew-description" class="pure-input-1-2" placeholder="Description" required></textarea>
                       </div>
                       <div class="pure-u-1 pure-u-md-1-3">
                           <label for="brew-og">OG</label>
@@ -170,7 +170,7 @@
                       </div>
                       <div class="pure-u-1 pure-u-md-1-2">
                           <label for="brew-water_profile">Water Profile</label>
-                          <select name="brew-style_type" class="pure-input-1-2">
+                          <select name="brew-water_profile" class="pure-input-1-2">
                               <option>MV Hoppy 4 Gal</option>
                               <option>MV Balanced 4 Gal</option>
                               <option>MV Malty 4 Gal</option>
@@ -183,10 +183,10 @@
                   <h3>Grain</h3>
                   <div class="pure-g" id="grain_group">
                       <div class="pure-u-1-2">
-                            <input id="grain1_type" class="pure-u-23-24" type="text" placeholder="Type">
+                            <input name="grain1_type" id="grain1_type" class="pure-u-23-24" type="text" placeholder="Type">
                       </div>
                       <div class="pure-u-1-2">
-                            <input id="grain1_amount" class="pure-u-23-24" type="text" placeholder="Amount (in lbs)">
+                            <input name="grain1_amount" id="grain1_amount" class="pure-u-23-24" type="text" placeholder="Amount (in lbs)">
                       </div>
                   </div>
                   <input type="button" value="Add Grain" id="addGrain">
@@ -195,13 +195,13 @@
                   <h3>Hops</h3>
                   <div class="pure-g" id="hop_group">
                       <div class="pure-u-1-3">
-                            <input id="hop1_type" class="pure-u-23-24" type="text" placeholder="Type">
+                            <input name="hop1_type" id="hop1_type" class="pure-u-23-24" type="text" placeholder="Type">
                       </div>
                       <div class="pure-u-1-3">
-                            <input id="hop1_amount" class="pure-u-23-24" type="text" placeholder="Amount (in oz)">
+                            <input name="hop1_amount" id="hop1_amount" class="pure-u-23-24" type="text" placeholder="Amount (in oz)">
                       </div>
                       <div class="pure-u-1-3">
-                            <input id="hop1_mins" class="pure-u-23-24" type="text" placeholder="Minutes">
+                            <input name="hop1_mins" id="hop1_mins" class="pure-u-23-24" type="text" placeholder="Minutes">
                       </div>
                   </div>
                   <input type="button" value="Add Hop" id="addHop">
@@ -210,36 +210,33 @@
                   <h3>Yeast</h3>
                   <div class="pure-g" id="yeast_group">
                       <div class="pure-u-1">
-                            <input id="yeast_type" class="pure-u-23-24" type="text" placeholder="Type">
+                            <input name="yeast_type" class="pure-u-23-24" type="text" placeholder="Type">
+                      </div>
+                      <div class="pure-u-1">
+                            <input name="yeast_temp" class="pure-u-23-24" type="text" placeholder="Temp">
                       </div>
                   </div>
 
                   <label for="bottles" class="pure-checkbox">
-                      <input id="is_in_bottles" type="checkbox"> This beer is in bottles
+                      <input name="is_in_bottles" type="checkbox"> This beer is in bottles
                   </label>
                   <label for="tap" class="pure-checkbox">
-                      <input id="is_on_tap" type="checkbox"> This beer is on tap
+                      <input name="is_on_tap" type="checkbox"> This beer is on tap
                   </label>
                   <label for="fermenting" class="pure-checkbox">
-                      <input id="is_fermenting" type="checkbox"> This beer is currently fermenting
+                      <input name="is_fermenting" type="checkbox"> This beer is currently fermenting
                   </label>
 
                   <button type="submit" class="pure-button pure-button-primary">Submit</button>
+
               </fieldset>
           </form>
-
-          <a class="pure-button" href="/brewing/logout">Logout</a>
 
         </div>
     </div>
 </div>
 
-
-
-
-
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-
 
 </body>
 </html>
