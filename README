@@ -35,3 +35,6 @@ Tap Handle Sensor Monitor:
  %> cd WiringPi-Python/
  %> sudo apt-get install python-dev python-setuptools swig
  %> ./build
+
+Raspberry Pi disable low power mode:
+https://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/test-and-configure#fixing-wifi-dropout-issues

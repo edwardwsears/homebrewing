@@ -228,16 +228,18 @@ def serve_page_brewing_fermenting():
 
 @app.route('/update_temp.html',methods=['POST'])
 def serve_page_brewing_update_temp():
-    first = request.form['first']
     temp = request.form['temp']
-
-    if (first==True):
-        #clear table
-        db_execute("delete from temperatures;")
+    avg = request.form['average']
 
     # add temp
     db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
+    db_execute("update chamber set avg = "+avg)
     return jsonify(result=True)
+
+@app.route('/get_chamber_set_data.html')
+def serve_page_brewing_update_temp():
+    fermStats = db_execute("SELECT * FROM chamber")
+    return jsonify(set_temp=fermStats[0]['set_temp'],set_range=fermStats[0]['set_range'],temp_control_on=fermStats[0]['temp_control_on'])
 
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
