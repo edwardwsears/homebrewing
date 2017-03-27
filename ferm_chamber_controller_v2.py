@@ -11,12 +11,13 @@ import temp_control_lib
 import requests
 import datetime
 
-lastChamberSetData = {'set_temp' : 65, 'set_range' : 2, 'temp_control_on' : 1}
 
 #MAIN
 def Main():
 
     ## Initializations ##################
+    global lastChamberSetData
+    lastChamberSetData = {'set_temp' : 65, 'set_range' : 2, 'temp_control_on' : 0}
     sleep_time = 5; #check every 5 seconds
     curr_temp = 65
     DEFAULT_SET_TEMP = 65
@@ -74,7 +75,7 @@ def Main():
             temp_control_lib.set_heat_ssr(False);
             CHAMBER_STATE = "OFF"
             CHAMBER_STATE_NEXT = "OFF"
-            sleep 10;
+            time.sleep(60*5); #sleep for 5 mins
             continue;
         ##poll temperature probe
         curr_beer_temp = temp_control_lib.read_temp(BEER_TEMP_PROBE)
@@ -168,16 +169,19 @@ def Main():
 
 def send_temp_post(temp,average):
     try:
-        r = requests.post("http://searsbeerscom/update_temp.html", data={'temp' : temp,'average':average})
+        r = requests.post("http://www.searsbeers.com/update_temp.html", data={'temp' : temp,'average':average})
     except:
         print "Temp Post Failed\n"
 
 def get_chamber_set_data():
+    global lastChamberSetData
     try:
-        r = requests.get("http://searsbeers.com/get_chamber_set_data.html", )
+        r = requests.get("http://www.searsbeers.com/get_chamber_set_data.html", )
+        r = r.json()
         lastChamberSetData = r
     except:
         # if fails use last received data
+        print "get_chamber_set_data() Failed\n"
         r = lastChamberSetData
 
     return r

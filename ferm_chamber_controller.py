@@ -10,6 +10,7 @@ import re
 import temp_control_lib
 import requests
 import datetime
+from decimal import *
 
 
 #MAIN
@@ -34,7 +35,7 @@ def Main():
     options.heat = True;
 
   ## Initializations ##################
-  sleep_time = 5; #check every 5 seconds
+  sleep_time = 10; #check every 5 seconds
   curr_temp = 65
   #setup io pins
   temp_control_lib.io_setup()
@@ -92,7 +93,8 @@ def Main():
     print "Chamber State: " + str(CHAMBER_STATE) + "\n\n"
 
     #update db
-    if ((datetime.datetime.now() - last_update).seconds > (30*60)):
+    if ((datetime.datetime.now() - last_update).seconds > (15*60)):
+        last_update = datetime.datetime.now()
         update_db(curr_beer_temp,False)
 
     #update averages
@@ -107,13 +109,13 @@ def Main():
       if (curr_chamber_temp < TARGET_TEMP):
         CHAMBER_STATE_NEXT = "OFF"
         temp_control_lib.set_cool_ssr(False);
-        sleep_time = 5
+        sleep_time = 10
     elif (CHAMBER_STATE == "HEATING"):
       heater_on_time = CURR_TIME - LAST_HEAT_ON;
       if (curr_chamber_temp > TARGET_TEMP):
         CHAMBER_STATE_NEXT = "OFF"
         temp_control_lib.set_heat_ssr(False);
-        sleep_time = 5
+        sleep_time = 10
     elif (CHAMBER_STATE == "OFF"):
       TARGET_TEMP = temp_control_lib.calculate_target_temp(options.set_temp,curr_beer_temp,avg_temp,avg_avg_temp);
       if ((curr_beer_temp > (options.set_temp + options.set_range)) and options.cool and (TARGET_TEMP<curr_chamber_temp)):
@@ -138,7 +140,7 @@ def Main():
         temp_control_lib.set_heat_ssr(True);
         CHAMBER_STATE_NEXT = "HEATING"
         LAST_HEAT_ON = CURR_TIME;
-        sleep_time = 1
+        sleep_time = 2
 
         ##calculate target temp
         #reset avgs
@@ -177,7 +179,9 @@ def update_db(temp,first_reading):
         send_temp_post(temp,False)
 
 def send_temp_post(temp,first):
+    temp = round(Decimal(temp),2)
     r = requests.post("http://ec2-52-40-75-70.us-west-2.compute.amazonaws.com/update_temp.html", data={'temp' : temp,'first':first})
+    print "Posted: "+str(r)
 
 if __name__ == "__main__":  
   try:  

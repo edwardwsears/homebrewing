@@ -237,7 +237,7 @@ def serve_page_brewing_update_temp():
     return jsonify(result=True)
 
 @app.route('/get_chamber_set_data.html')
-def serve_page_brewing_update_temp():
+def serve_page_brewing_get_chamber_set_data():
     fermStats = db_execute("SELECT * FROM chamber")
     return jsonify(set_temp=fermStats[0]['set_temp'],set_range=fermStats[0]['set_range'],temp_control_on=fermStats[0]['temp_control_on'])
 
