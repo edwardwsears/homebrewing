@@ -10,6 +10,7 @@ import re
 import temp_control_lib
 import requests
 import datetime
+from decimal import *
 
 
 #MAIN
@@ -89,7 +90,8 @@ def Main():
         print "Chamber State: " + str(CHAMBER_STATE) + "\n\n"
 
         #update db
-        if ((datetime.datetime.now() - last_update).seconds > (30*60)):
+        if ((datetime.datetime.now() - last_update).seconds > (15*60)):
+            last_update = datetime.datetime.now()
             send_temp_post(curr_beer_temp,avg_avg_temp)
 
         #update averages
@@ -169,6 +171,7 @@ def Main():
 
 def send_temp_post(temp,average):
     try:
+        temp = round(Decimal(temp),2)
         r = requests.post("http://www.searsbeers.com/update_temp.html", data={'temp' : temp,'average':average})
     except:
         print "Temp Post Failed\n"
