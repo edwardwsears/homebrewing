@@ -13,7 +13,7 @@ from decimal import *
 from pytz import timezone
 
 #config
-localTest = True;
+localTest = False;
 if (localTest):
     DATABASE='brew_server.sql'
 else:
@@ -203,6 +203,16 @@ def serve_page_brewing_fermenting():
         g.sijax.set_request_uri('/fermenting.html')
         g.sijax.register_callback('update_ferm_temp', update_ferm_temp_handler)
         return g.sijax.process_request()
+
+    if request.method == 'POST':
+        g.db.execute('update chamber set set_temp = ?',[request.form['set_temp']])
+        g.db.execute('update chamber set set_range = ?',[request.form['set_range']])
+        if (request.form['temp_control_on'] == "On"):
+            temp_control_num = 1
+        else:
+            temp_control_num = 0
+        g.db.execute('update chamber set temp_control_on = ?',[temp_control_num])
+        flash('Temp Changed')
 
     brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
     tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 96")

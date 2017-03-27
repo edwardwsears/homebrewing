@@ -106,14 +106,35 @@
         <!-- ************** End Temperature graph **************************-->
         <!-- ************** begin stats **************************-->
         <div class="pure-g" style="text-align:center">
-            <div class="pure-u-1 pure-u-md-1-3">
-                <h3> Chamber Average Temp: {{fermStats[0]['avg']}}&degF </h3>
-            </div>
-            <div class="pure-u-1 pure-u-md-1-3">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <h3> Chamber Temp Control:
+                    {% if fermStats[0]['temp_control_on'] == 1 %}
+                        On
+                    {% else %}
+                        Off
+                    {% endif %}
+                </h3>
                 <h3> Chamber Set Temp: {{fermStats[0]['set_temp']}}&degF </h3>
-            </div>
-            <div class="pure-u-1 pure-u-md-1-3">
                 <h3> Chamber Set Range: {{fermStats[0]['set_range']}}&degF </h3>
+                {% if session['logged_in'] %}
+                    <form class="pure-form" method="post" >
+                      <fieldset>
+                        <h3>Change Temp:</h3>
+                        <h4> Chamber Temp Control On: 
+                          <select name="temp_control_on" class="pure-input-2-24" required>
+                              <option>On</option>
+                              <option>Off</option>
+                          </select>
+                        </h4>
+                        <h4> Chamber Set Temp: <input name="set_temp" class="pure-u-2-24" type="text" required> </h4>
+                        <h4> Chamber Set Range: <input name="set_range" class="pure-u-2-24" type="text" required> </h4>
+                        <button type="submit" class="pure-button pure-button-primary">Set</button>
+                      </fieldset>
+                    </form>
+                {% endif %}
+            </div>
+            <div class="pure-u-1 pure-u-md-1-2">
+                <h3> Chamber Average Temp: {{fermStats[0]['avg']}}&degF </h3>
             </div>
         </div><!--pure-g -->
         <!-- ************** end stats **************************-->
