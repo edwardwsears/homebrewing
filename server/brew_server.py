@@ -245,6 +245,65 @@ def serve_page_brewing_get_chamber_set_data():
 
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
+    def submit_edit_stat_table_handler(obj_response,id,formData):
+        #edit db
+        dbStr = "update brews set"
+        dbStr += " name=\""+str(formData['brew-name'])+"\","
+        dbStr += " description=\""+str(formData['brew-description'])+"\","
+        dbStr += " style=\""+str(formData['brew-style'])+"\","
+        dbStr += " og=\""+str(formData['brew-og'])+"\","
+        dbStr += " abv=\""+str(formData['brew-abv'])+"\","
+        dbStr += " ibu=\""+str(formData['brew-ibu'])+"\","
+        dbStr += " brew_date=date(\""+str(formData['brew-date'])+"\")"
+        dbStr += " where id="+str(id)
+        db_execute(dbStr)
+        update_display_recipe_handler(obj_response,id);
+    def update_edit_stat_table_handler(obj_response,id):
+        displayBrew = db_execute("SELECT * FROM brews where id="+str(id))
+        scriptStr = """
+            $("#statTable").html("\
+            <table class='pure-table pure-table-bordered'>\
+                <thead>\
+                    <tr>\
+                        <th>Beer Stats </th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                    <tr>\
+                        <td >\
+                          <form id='brew-data-form' class='pure-form pure-form-aligned' method='post' >\
+                            <fieldset>\
+                                <label for='brew-name'>Brew Name</label>\
+                                <input name='brew-name' class='pure-u-1' type='text' value='"""+displayBrew[0]['name']+"""'>\
+                                <label for='brew-description'>Description</label>\
+                                <textarea name='brew-description' class='pure-u-1' required>"""+displayBrew[0]['description']+"""</textarea>\
+                                <label for='brew-style'>Style</label>\
+                                <input name='brew-style' class='pure-u-1' type='text' value='"""+displayBrew[0]['style']+"""'>\
+                                <label for='brew-og'>OG</label>\
+                                <input name='brew-og' class='pure-u-1' type='text' value='"""+displayBrew[0]['og']+"""'>\
+                                <label for='brew-abv'>ABV</label>\
+                                <input name='brew-abv' class='pure-u-1' type='text' value='"""+displayBrew[0]['abv']+"""'>\
+                                <label for='brew-ibu'>IBU</label>\
+                                <input name='brew-ibu' class='pure-u-1' type='text' value='"""+displayBrew[0]['ibu']+"""'>\
+                                <label for='brew-date'>Brew Date</label>\
+                                <input name='brew-date' class='pure-u-1' type='date' value='"""+displayBrew[0]['brew_date']+"""'>\
+                            </fieldset>\
+                          </form>\
+                            <h4>\
+                                <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#brew-data-form');Sijax.request('submit_edit_stat_table',["""+str(displayBrew[0]['id'])+""",values])\\">Submit </a>\
+                                <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_display_recipe',["""+str(displayBrew[0]['id'])+"""])\\">Cancel </a>\
+                            </h4>\
+                        </td>\
+                    </tr>\
+                </tbody>\
+            </table>\
+            ");
+            // scroll
+            $('html, body').animate({
+                scrollTop: $('#statTable').offset().top
+            }, 'slow');
+            """
+        obj_response.script(scriptStr)
     def update_display_recipe_handler(obj_response,id):
         displayBrew = db_execute("SELECT * FROM brews where id="+str(id))
         scriptStr = """
@@ -268,6 +327,11 @@ def serve_page_brewing_brews():
                                 ABV: """+displayBrew[0]['abv']+""" <br>\
                                 IBU: """+displayBrew[0]['ibu']+""" <br>\
                                 Brew Date: """+displayBrew[0]['brew_date']+"""\
+                                """
+        if session.get('logged_in'):
+            scriptStr += """<a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_stat_table',["""+str(displayBrew[0]['id'])+"""])\\">edit </a>\\"""
+
+        scriptStr +="""\
                             </h4>\
                         </td>\
                     </tr>\
@@ -414,6 +478,8 @@ def serve_page_brewing_brews():
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brews.html')
         g.sijax.register_callback('update_display_recipe', update_display_recipe_handler)
+        g.sijax.register_callback('update_edit_stat_table', update_edit_stat_table_handler)
+        g.sijax.register_callback('submit_edit_stat_table', submit_edit_stat_table_handler)
         return g.sijax.process_request()
     brews = db_execute("SELECT * FROM brews")
     return render_template('brews.html',brews=brews)
