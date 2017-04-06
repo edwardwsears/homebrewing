@@ -112,6 +112,122 @@ def serve_page_brewing_on_tap():
         nextBottlesStr = str(size)+"oz: "+str(nextBottles);
         obj_response.html(idName,nextBottlesStr)
 
+    def add_guest_bottle_handler(obj_response,formData, numBottles):
+        #edit db
+        dbStr = "insert into guest_bottles values("
+        dbStr += " NULL,"
+        dbStr += " \""+str(formData['brew-name'])+"\","
+        dbStr += " \""+str(formData['brew-style'])+"\","
+        dbStr += " \""+str(numBottles)+"\""
+        dbStr += " );"
+        db_execute(dbStr)
+        edit_guest_bottle_table_handler(obj_response)
+
+    def delete_guest_bottle_handler(obj_response, id):
+        #edit db
+        dbStr = "delete from guest_bottles where "
+        dbStr += " id="+str(id)+";"
+        db_execute(dbStr)
+        edit_guest_bottle_table_handler(obj_response)
+
+    def update_guest_bottles_left_handler(obj_response,bottleId,value):
+        #update value
+        guestBottles = db_execute("SELECT * FROM guest_bottles where id=\"" + str(bottleId) + "\"")
+        nextBottleNum = guestBottles[0]['num_bottles'] + value
+        if (nextBottleNum<0):
+            nextBottleNum = 0
+        db_execute("update guest_bottles set num_bottles="+str(nextBottleNum)+" where id=\"" + str(bottleId) + "\"")
+        display_guest_bottles_left_handler(obj_response)
+
+    def edit_guest_bottle_table_handler(obj_response):
+        guestBottles = db_execute("SELECT * FROM guest_bottles")
+        scriptStr = """
+            $('#guest_bottle_table').html("\
+                <h1>Guest Bottles</h1>\
+                <table class='pure-table pure-table-horizontal'>\
+                    <thead>\
+                        <tr>\
+                            <th>Name</th>\
+                            <th>Style</th>\
+                            <th>Action</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody>\
+                    """
+        for bottle in guestBottles:
+            scriptStr += """\
+                        <tr>\
+                            <td>"""+str(bottle['name'])+"""</td>\
+                            <td>"""+str(bottle['style'])+"""</td>\
+                            <td>\
+                                <a class='pure-menu-link' href='javascript://' onclick=\\"Sijax.request('delete_guest_bottle',["""+str(bottle['id'])+"""])\\" >Delete</a>\
+                            </td>\
+                        </tr>\
+                        """
+        scriptStr += """\
+                    </table>\
+                    <form id='guest-bottle-form' class='pure-form pure-form-stacked' method='post' >\
+                    <fieldset>\
+                        <label for='brew-name'>Brew Name</label>\
+                        <input name='brew-name' type='text' required>\
+                        <label for='brew-style'>Brew Style</label>\
+                        <input name='brew-style' type='text' required>\
+                            <h4>\
+                                <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#guest-bottle-form');Sijax.request('add_guest_bottle',[values,1])\\">Add 1</a>\
+                                <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#guest-bottle-form');Sijax.request('add_guest_bottle',[values,6])\\">Add 6 </a>\
+                            </td>\
+                    </fieldset>\
+                      </form>\
+                    </tbody>\
+            <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('display_guest_bottles_left',[])\\">done </a>\
+                </tbody>\
+            ");
+            """
+        obj_response.script(scriptStr)
+    def display_guest_bottles_left_handler(obj_response):
+        guestBottles = db_execute("SELECT * FROM guest_bottles")
+        scriptStr = """
+            $('#guest_bottle_table').html("\
+                <h1>Guest Bottles</h1>\
+                <table class='pure-table pure-table-horizontal'>\
+                    <thead>\
+                        <tr>\
+                            <th>Name</th>\
+                            <th>Style</th>\
+                            <th>Number of Bottles</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody>\
+                    """
+        for bottle in guestBottles:
+            scriptStr += """\
+                        <tr>\
+                            <td>"""+str(bottle['name'])+"""</td>\
+                            <td>"""+str(bottle['style'])+"""</td>\
+                            <td>\
+                                """+str(bottle['num_bottles'])+"""\
+                                """
+            if session.get('logged_in'):
+                scriptStr += """\
+                                <a class='button-choose pure-button' onclick=\\"Sijax.request('update_guest_bottles_left',["""+str(bottle['id'])+""",-1])\\" >-</a>\
+                                <a class='button-choose pure-button' onclick=\\"Sijax.request('update_guest_bottles_left',["""+str(bottle['id'])+""",1])\\" >+</a>\
+                            """
+            scriptStr += """\
+                            </td>\
+                        </tr>\
+                        """
+        scriptStr += """\
+                    </tbody>\
+                </table>\
+                """
+        if session.get('logged_in'):
+            scriptStr += """<a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('edit_guest_bottle_table',[])\\">edit </a>\\"""
+        scriptStr += """\
+                </tbody>\
+            ");
+            """
+        obj_response.script(scriptStr)
+
     def update_keg_stats_handler(obj_response):
         beerOnTap = db_execute("select name,style from brews where on_tap=1")
         kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
@@ -164,6 +280,11 @@ def serve_page_brewing_on_tap():
         g.sijax.register_callback('update_oz_left', update_oz_left_handler)
         g.sijax.register_callback('update_beers_left_pic', update_beers_left_pic_handler)
         g.sijax.register_callback('update_bottles_left', update_bottles_left_handler)
+        g.sijax.register_callback('update_guest_bottles_left', update_guest_bottles_left_handler)
+        g.sijax.register_callback('display_guest_bottles_left', display_guest_bottles_left_handler)
+        g.sijax.register_callback('edit_guest_bottle_table', edit_guest_bottle_table_handler)
+        g.sijax.register_callback('delete_guest_bottle', delete_guest_bottle_handler)
+        g.sijax.register_callback('add_guest_bottle', add_guest_bottle_handler)
         g.sijax.register_callback('update_keg_stats', update_keg_stats_handler)
         g.sijax.register_callback('update_last_pour_stats', update_last_pour_stats_handler)
         return g.sijax.process_request()
@@ -172,8 +293,9 @@ def serve_page_brewing_on_tap():
     kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
+    guestBottles = db_execute("SELECT * FROM guest_bottles")
 
-    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData)
+    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
 
 @app.route('/update_tap.html',methods=['POST'])
 def serve_page_brewing_update_tap():

@@ -7,8 +7,15 @@ Show tables:
 Show schema:
 %> .schema <optional table>
 
+drop table
+%> drop table <table>
+
 Insert:
 %> insert into <table> values(<>,<>,...);
+
+Delete row:
+%> DELETE FROM <table> WHERE [condition];
+
 
 Select:
 %> select * from <table>;
