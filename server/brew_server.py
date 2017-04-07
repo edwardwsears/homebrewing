@@ -58,9 +58,11 @@ def serve_page_index():
     kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
+    guestBottles = db_execute("SELECT * FROM guest_bottles")
     tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 1")
 
-    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData, tempList=tempList)
+    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData, tempList=tempList, guestBottles=guestBottles)
+
 
 @flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
@@ -289,7 +291,7 @@ def serve_page_brewing_on_tap():
         g.sijax.register_callback('update_last_pour_stats', update_last_pour_stats_handler)
         return g.sijax.process_request()
 
-    beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
+    beerOnTap = db_execute("select * from brews where on_tap=1")
     kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
@@ -338,17 +340,16 @@ def serve_page_brewing_fermenting():
         db_execute_args('update chamber set temp_control_on = ?',[temp_control_num])
         flash('Temp Changed')
 
-    brewName = db_execute("SELECT name FROM brews WHERE fermenting=1")
+    fermBrew = db_execute("SELECT name,id FROM brews WHERE fermenting=1")
     tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 96")
     fermStats = db_execute("SELECT * FROM chamber")
     formattedTempList = []
     for temp in tempList:
         dt_temp = datetime_from_sqlite(temp['timestamp'])
         formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
-    if (len(brewName)==1):
-        return render_template('fermenting.html', name=brewName[0]['name'], tempList=formattedTempList, fermStats=fermStats)
+        return render_template('fermenting.html', fermBrew=fermBrew[0], tempList=formattedTempList, fermStats=fermStats)
     else:
-        return render_template('fermenting.html', name="Nothing", tempList=formattedTempList, fermStats=fermStats)
+        return render_template('fermenting.html', tempList=formattedTempList, fermStats=fermStats)
 
 @app.route('/update_temp.html',methods=['POST'])
 def serve_page_brewing_update_temp():
@@ -368,6 +369,26 @@ def serve_page_brewing_get_chamber_set_data():
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
     def submit_edit_stat_table_handler(obj_response,id,formData):
+        if formData.has_key('is_in_bottles'):
+            is_in_bottles = 1
+            dbStr = "insert into bottles values("
+            dbStr += "\"" + formData['brew-name'] + "\","
+            dbStr += "0 , 0,"
+            dbStr += str(id) + ");"
+            db_execute(dbStr)
+        else:
+            is_in_bottles = 0
+            dbStr = "delete from bottles where id="
+            dbStr += str(id)
+            db_execute(dbStr)
+        if formData.has_key('is_on_tap'):
+            is_on_tap = 1
+        else:
+            is_on_tap = 0
+        if formData.has_key('is_fermenting'):
+            is_fermenting = 1
+        else:
+            is_fermenting = 0
         #edit db
         dbStr = "update brews set"
         dbStr += " name=\""+str(formData['brew-name'])+"\","
@@ -376,7 +397,10 @@ def serve_page_brewing_brews():
         dbStr += " og=\""+str(formData['brew-og'])+"\","
         dbStr += " abv=\""+str(formData['brew-abv'])+"\","
         dbStr += " ibu=\""+str(formData['brew-ibu'])+"\","
-        dbStr += " brew_date=date(\""+str(formData['brew-date'])+"\")"
+        dbStr += " brew_date=date(\""+str(formData['brew-date'])+"\"),"
+        dbStr += " in_bottles=\""+str(is_in_bottles)+"\","
+        dbStr += " on_tap=\""+str(is_on_tap)+"\","
+        dbStr += " fermenting=\""+str(is_fermenting)+"\""
         dbStr += " where id="+str(id)
         db_execute(dbStr)
         update_display_recipe_handler(obj_response,id);
@@ -396,19 +420,43 @@ def serve_page_brewing_brews():
                           <form id='brew-data-form' class='pure-form pure-form-aligned' method='post' >\
                             <fieldset>\
                                 <label for='brew-name'>Brew Name</label>\
-                                <input name='brew-name' class='pure-u-1' type='text' value='"""+displayBrew[0]['name']+"""'>\
+                                    <input name='brew-name' class='pure-u-1' type='text' value='"""+displayBrew[0]['name']+"""'>\
                                 <label for='brew-description'>Description</label>\
-                                <textarea name='brew-description' class='pure-u-1' required>"""+displayBrew[0]['description']+"""</textarea>\
+                                    <textarea name='brew-description' class='pure-u-1' required>"""+displayBrew[0]['description']+"""</textarea>\
                                 <label for='brew-style'>Style</label>\
-                                <input name='brew-style' class='pure-u-1' type='text' value='"""+displayBrew[0]['style']+"""'>\
+                                    <input name='brew-style' class='pure-u-1' type='text' value='"""+displayBrew[0]['style']+"""'>\
                                 <label for='brew-og'>OG</label>\
-                                <input name='brew-og' class='pure-u-1' type='text' value='"""+displayBrew[0]['og']+"""'>\
+                                    <input name='brew-og' class='pure-u-1' type='text' value='"""+displayBrew[0]['og']+"""'>\
                                 <label for='brew-abv'>ABV</label>\
-                                <input name='brew-abv' class='pure-u-1' type='text' value='"""+displayBrew[0]['abv']+"""'>\
+                                    <input name='brew-abv' class='pure-u-1' type='text' value='"""+displayBrew[0]['abv']+"""'>\
                                 <label for='brew-ibu'>IBU</label>\
-                                <input name='brew-ibu' class='pure-u-1' type='text' value='"""+displayBrew[0]['ibu']+"""'>\
+                                    <input name='brew-ibu' class='pure-u-1' type='text' value='"""+displayBrew[0]['ibu']+"""'>\
                                 <label for='brew-date'>Brew Date</label>\
-                                <input name='brew-date' class='pure-u-1' type='date' value='"""+displayBrew[0]['brew_date']+"""'>\
+                                    <input name='brew-date' class='pure-u-1' type='date' value='"""+displayBrew[0]['brew_date']+"""'>\
+                                <label for='bottles' class='pure-checkbox'>\
+                                    <input name='is_in_bottles' type='checkbox' \
+                                    """
+        if (displayBrew[0]['in_bottles']):
+            scriptStr += "checked"
+        scriptStr += """\
+                                > This beer is in bottles\
+                                </label>\
+                                <label for='tap' class='pure-checkbox'>\
+                                    <input name='is_on_tap' type='checkbox' \
+                                    """
+        if (displayBrew[0]['on_tap']):
+            scriptStr += "checked"
+        scriptStr += """\
+                                    > This beer is on tap\
+                                </label>\
+                                <label for='fermenting' class='pure-checkbox'>\
+                                    <input name='is_fermenting' type='checkbox' \
+                                    """
+        if (displayBrew[0]['fermenting']):
+            scriptStr += "checked"
+        scriptStr += """\
+                                    > This beer is currently fermenting\
+                                </label>\
                             </fieldset>\
                           </form>\
                             <h4>\
@@ -448,8 +496,14 @@ def serve_page_brewing_brews():
                                 OG: """+displayBrew[0]['og']+""" <br>\
                                 ABV: """+displayBrew[0]['abv']+""" <br>\
                                 IBU: """+displayBrew[0]['ibu']+""" <br>\
-                                Brew Date: """+displayBrew[0]['brew_date']+"""\
+                                Brew Date: """+displayBrew[0]['brew_date']+""" <br>\
                                 """
+        if (displayBrew[0]['on_tap']):
+            scriptStr += "<br>Currently On Tap"
+        if (displayBrew[0]['in_bottles']):
+            scriptStr += "<br>Currently In Bottles"
+        if (displayBrew[0]['fermenting']):
+            scriptStr += "<br>Currently Fermenting"
         if session.get('logged_in'):
             scriptStr += """<a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_stat_table',["""+str(displayBrew[0]['id'])+"""])\\">edit </a>\\"""
 
@@ -603,12 +657,15 @@ def serve_page_brewing_brews():
         g.sijax.register_callback('update_edit_stat_table', update_edit_stat_table_handler)
         g.sijax.register_callback('submit_edit_stat_table', submit_edit_stat_table_handler)
         return g.sijax.process_request()
-    brews = db_execute("SELECT * FROM brews")
-    return render_template('brews.html',brews=brews)
 
-@app.route('/brew_tech.html')
-def serve_page_brewing_brew_tech():
-    return render_template('brew_tech.html',)
+    brews = db_execute("SELECT * FROM brews")
+    if request.method == 'GET':
+        selectBrewId = request.args.get("selectBrewId")
+        return render_template('brews.html', brews=brews, selectBrewId=selectBrewId)
+    return render_template('brews.html', brews=brews)
+
+
+    return render_template('brews.html', brews=brews)
 
 @app.route('/add_brew.html',methods=['GET', 'POST'])
 def serve_page_brewing_add_brew():

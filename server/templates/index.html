@@ -66,6 +66,9 @@
                     <li>{{brew['name']}}</li>
                     {% endif %}
                 {% endfor %}
+                {% for bottle in guestBottles %}
+                    <li>{{bottle['name']}}</li>
+                {% endfor %}
                 </ul>
 
                 <a href="on_tap.html" class="button-choose pure-button">details</a>

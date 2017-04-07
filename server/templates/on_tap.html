@@ -76,6 +76,7 @@
                                 IBU: {{beerOnTap['ibu']}} <br>
                                 Brew Date: {{beerOnTap['brew_date']}}
                             </h4>
+                            <a class='pure-button' href="/brews.html?selectBrewId={{beerOnTap['id']}}" >Recipe</a>
                         </td>
 
                         <td>
@@ -137,7 +138,9 @@
                         {% for brew in brewData %}
                             {% if brew['in_bottles'] == 1 %}
                         <tr>
-                            <td>{{brew['name']}}</td>
+                            <td>
+                                <a class='pure-button' href="/brews.html?selectBrewId={{brew['id']}}" >{{brew['name']}}</a>
+                            </td>
                             <td>{{brew['style']}}</td>
                             <td>{{brew['abv']}}</td>
                             <td>{{brew['brew_date']}}</td>

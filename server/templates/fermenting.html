@@ -78,19 +78,23 @@
     <div id="banner" class=banner>
         <div class="banner-head">
             <h2>Fermentation Chamber Status</h2>
-            <h4>Current Brew Fermenting: {{ name }}</h4>
-            <h3 id="latest_temp">Latest Fermentation Temperature: </h3>
-            <script>
-                Sijax.request('update_ferm_temp') <!-- initial load -->
-                setInterval(function(){
-                    Sijax.request('update_ferm_temp')
-                },2000);
-            </script>
         </div><!--header -->
     </div><!--banner -->
 
 
     <div id="main" class=main>
+        {% if fermBrew is defined %}
+            <a class='pure-button' href="/brews.html?selectBrewId={{fermBrew['id']}}" >Current Brew Fermenting: {{fermBrew['name']}}</a>
+        {% else %}
+            <h4>Current Brew Fermenting: Nothing</h4>
+        {% endif %}
+        <h3 id="latest_temp">Latest Fermentation Temperature: </h3>
+        <script>
+            Sijax.request('update_ferm_temp') <!-- initial load -->
+            setInterval(function(){
+                Sijax.request('update_ferm_temp')
+            },2000);
+        </script>
 
         <!-- ***************** Temperature graph **************************-->
         <div class="pure-g" >

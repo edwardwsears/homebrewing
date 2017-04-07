@@ -19,6 +19,13 @@
     <script type="text/javascript">
         {{ g.sijax.get_js()|safe }}
     </script>
+
+    <script>
+        //select a brew on load if requested
+        {% if selectBrewId is defined %}
+            Sijax.request('update_display_recipe',[{{selectBrewId}}])
+        {% endif %}
+    </script>
 </head>
 
 <body>
