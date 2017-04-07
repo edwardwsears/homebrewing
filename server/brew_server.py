@@ -347,6 +347,7 @@ def serve_page_brewing_fermenting():
     for temp in tempList:
         dt_temp = datetime_from_sqlite(temp['timestamp'])
         formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
+    if (len(fermBrew)==1):
         return render_template('fermenting.html', fermBrew=fermBrew[0], tempList=formattedTempList, fermStats=fermStats)
     else:
         return render_template('fermenting.html', tempList=formattedTempList, fermStats=fermStats)
