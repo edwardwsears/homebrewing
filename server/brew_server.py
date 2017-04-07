@@ -366,6 +366,19 @@ def serve_page_brewing_get_chamber_set_data():
     fermStats = db_execute("SELECT * FROM chamber")
     return jsonify(set_temp=fermStats[0]['set_temp'],set_range=fermStats[0]['set_range'],temp_control_on=fermStats[0]['temp_control_on'])
 
+@app.route('/get_sec_per_oz_data.html')
+def serve_page_brewing_get_sec_per_oz_data():
+    tapFlowData = db_execute("SELECT * FROM tap_flow_data")
+    return jsonify(sec_per_oz=tapFlowData[0]['sec_per_oz'])
+
+@app.route('/update_sec_per_oz_data.html')
+def serve_page_brewing_update_sec_per_oz_data():
+    sec_per_oz = request.form['sec_per_oz']
+
+    # add latest sec per oz
+    db_execute("update tap_flow_data set sec_per_oz=,"+str(sec_per_oz)+";")
+    return jsonify(result=True)
+
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
     def submit_edit_stat_table_handler(obj_response,id,formData):
