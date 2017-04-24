@@ -24,7 +24,15 @@ Update:
 %> update <table> set <field> = <value>; //optional: where <field> = <value> ;
 
 Alter table:
-alter table <table> add column <column> <type>
+%> alter table <table> add column <column> <type>
+
+Delete row from table:
+define new table
+copy values
+drop old table
+rename new table
+%> ALTER TABLE <table name> RENAME TO <new table name>;
+
 
 Quit:
 %> .quit
