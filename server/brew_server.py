@@ -35,6 +35,12 @@ app.config['SIJAX_STATIC_PATH'] = path
 app.config['SIJAX_JSON_URI'] = '/static/js/sijax/json2.js'
 flask_sijax.Sijax(app)
 
+#facial recogntion state defines
+FACE_STATE_PENDING          = 0
+FACE_STATE_RECOGNIZED       = 1
+FACE_STATE_NOT_REGISTERED   = 2
+FACE_STATE_NO_FACE          = 3
+
 
 def connect_db():
     con = sqlite3.connect(DATABASE)
@@ -54,35 +60,41 @@ def teardown_request(exception):
 @app.route('/')
 @app.route('/index.html')
 def serve_page_index():
-    beerOnTap = db_execute("select name,style,brew_date,description,og,abv,ibu from brews where on_tap=1")
-    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
     guestBottles = db_execute("SELECT * FROM guest_bottles")
     tempList = db_execute("SELECT * FROM temperatures ORDER BY datetime(timestamp) desc limit 1")
 
-    return render_template('/index.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData, tempList=tempList, guestBottles=guestBottles)
+    return render_template('/index.html', bottleData=bottleData,brewData=brewData, tempList=tempList, guestBottles=guestBottles)
 
 
 @flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
     def update_beers_left_handler(obj_response):
         beerOnTap = db_execute("select name,style from brews where on_tap=1")
-        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        if (len(beerOnTap)==0):
+            beersLeftString = "Beers Left: 0"
+            obj_response.html("#beers_left",beersLeftString)
+            return
+        kegData = db_execute("SELECT * FROM keg")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         beersLeftString = "Beers Left: " + str(beersLeft)
         obj_response.html("#beers_left",beersLeftString)
 
     def update_oz_left_handler(obj_response):
-        beerOnTap = db_execute("select name,style from brews where on_tap=1")
-        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        kegData = db_execute("SELECT * FROM keg")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         ozLeftString =  str(kegData[0]['current_volume']) + "/" + str(kegData[0]['total_volume']) + " fl oz"
         obj_response.html("#oz_left",ozLeftString)
 
     def update_beers_left_pic_handler(obj_response):
         beerOnTap = db_execute("select name,style from brews where on_tap=1")
-        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        if (len(beerOnTap)==0):
+            img_name = "images/keg/0.png";
+            img_src = url_for('static', filename=img_name)
+            obj_response.attr("#keg_pic","src",img_src);
+            return
+        kegData = db_execute("SELECT * FROM keg")
         beersLeft = float(kegData[0]['current_volume'])
         totalBeers = float(kegData[0]['total_volume'])
         beersLeftPercent = (beersLeft/totalBeers)*100;
@@ -231,8 +243,7 @@ def serve_page_brewing_on_tap():
         obj_response.script(scriptStr)
 
     def update_keg_stats_handler(obj_response):
-        beerOnTap = db_execute("select name,style from brews where on_tap=1")
-        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
         kegStatsString = ""
 
         #days since tap
@@ -262,16 +273,75 @@ def serve_page_brewing_on_tap():
             daysUntilBrewString = "Need to Brew in: &#x221e; days"
             kegStatsString +=  daysUntilBrewString + "<br>"
 
-        obj_response.html("#keg_stats",kegStatsString)
+        scriptStr = """
+        $("#keg_stats").html("\
+            <h3 style='white-space:nowrap'>"""+kegStatsString+""" </h3>\
+        ");
+        """
+        obj_response.script(scriptStr)
+
+    def update_edit_keg_stat_table_handler(obj_response, show):
+        if (show == 1):
+            kegData = db_execute("SELECT * FROM keg")
+            scriptStr = """
+            $("#keg_edit").html("\
+                <form id='keg-stat-form' class='pure-form pure-form-stacked' method='post' >\
+                <fieldset>\
+                    <label for='current-volume'>Current Volume</label>\
+                    <input name='current-volume' type='text' value='"""+str(kegData[0]['current_volume'])+"""' required>\
+                    <label for='total-volume'>Total Volume</label>\
+                    <input name='total-volume' type='text' value='"""+str(kegData[0]['total_volume'])+"""' required>\
+                    <label for='tap-date'>Tap Date</label>\
+                    <input name='tap-date' type='date' value='"""+str(kegData[0]['tap_date'])+"""' required>\
+                    <h4>\
+                        <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#keg-stat-form');Sijax.request('edit_keg_stats',[values])\\">Submit</a>\
+                        <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_keg_stat_table',[0])\\">Done</a>\
+                    </td>\
+                </fieldset>\
+                </form>\
+            ");
+            """
+        else:
+            scriptStr = """
+            $("#keg_edit").html("\
+                <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_keg_stat_table',[1])\\">edit</a>\
+            ");
+            """
+        obj_response.script(scriptStr)
+
+    def edit_keg_stats_handler(obj_response,formData):
+        #edit db
+        dbStr = "update keg set "
+        dbStr += " current_volume = "+str(formData['current-volume'])+","
+        dbStr += " total_volume = "+str(formData['total-volume'])+","
+        dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\")"
+        dbStr += ";"
+        db_execute(dbStr)
+        update_edit_keg_stat_table_handler(obj_response,0)
 
     def update_last_pour_stats_handler(obj_response):
-        beerOnTap = db_execute("select name,style from brews where on_tap=1")
-        kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
+        #usernameData = db_execute("SELECT * FROM usernames where username=")
         lastPourString = ""
 
-        lastPourString += "Last pour: <br>"
-        lastPourString += str(kegData[0]['last_pour_volume']) + " oz <br>"
-        lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
+        #FACE_STATE_PENDING=0
+        #FACE_STATE_RECOGNIZED=1
+        #FACE_STATE_NOT_REGISTERED=2
+        #FACE_STATE_NO_FACE=3
+        if (kegData[0]['recognition_state'] == FACE_STATE_PENDING or kegData[0]['recognition_state'] == FACE_STATE_NO_FACE):
+            lastPourString += "Last pour: <br>"
+            lastPourString += str(kegData[0]['last_pour_volume']) + " oz <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
+        elif (kegData[0]['recognition_state'] == FACE_STATE_RECOGNIZED):
+            lastPourString += "Last pour: <br>"
+            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
+            lastPourString += "by " + str(kegData[0]['poured_username']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
+        elif (kegData[0]['recognition_state'] == FACE_STATE_NOT_REGISTERED):
+            lastPourString += "Last pour: <br>"
+            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
+            lastPourString += "by a " + str(kegData[0]['poured_age']) + " yr old " + str(kegData[0]['poured_gender']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
 
         obj_response.html("#last_pour_stats",lastPourString)
 
@@ -288,31 +358,20 @@ def serve_page_brewing_on_tap():
         g.sijax.register_callback('delete_guest_bottle', delete_guest_bottle_handler)
         g.sijax.register_callback('add_guest_bottle', add_guest_bottle_handler)
         g.sijax.register_callback('update_keg_stats', update_keg_stats_handler)
+        g.sijax.register_callback('edit_keg_stats', edit_keg_stats_handler)
+        g.sijax.register_callback('update_edit_keg_stat_table', update_edit_keg_stat_table_handler)
         g.sijax.register_callback('update_last_pour_stats', update_last_pour_stats_handler)
         return g.sijax.process_request()
 
-    beerOnTap = db_execute("select * from brews where on_tap=1")
-    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
     bottleData = db_execute("SELECT * FROM bottles")
     brewData = db_execute("SELECT * FROM brews")
     guestBottles = db_execute("SELECT * FROM guest_bottles")
+    beerOnTap = db_execute("select * from brews where on_tap=1")
+    if (len(beerOnTap)==0):
+        return render_template('/on_tap.html', bottleData=bottleData, brewData=brewData, guestBottles=guestBottles)
+    kegData = db_execute("SELECT * FROM keg")
 
     return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
-
-@app.route('/update_tap.html',methods=['POST'])
-def serve_page_brewing_update_tap():
-    ozPoured = request.form['oz_poured']
-    beerOnTap = db_execute("select name,style from brews where on_tap=1")
-    kegData = db_execute("SELECT * FROM keg where name=\"" + beerOnTap[0]['name'] + "\"")
-
-    newVolume = kegData[0]['current_volume'] - int(ozPoured)
-    if (newVolume < 0):
-        newVolume = 0
-
-    db_execute("update keg set current_volume="+str(newVolume)+" where name=\"" + beerOnTap[0]['name'] + "\"")
-    db_execute("update keg set last_pour_volume="+str(ozPoured)+" where name=\"" + beerOnTap[0]['name'] + "\"")
-    db_execute("update keg set last_pour_time=DateTime('now') where name=\"" + beerOnTap[0]['name'] + "\"")
-    return jsonify(result=True)
 
 @flask_sijax.route(app, '/fermenting.html')
 def serve_page_brewing_fermenting():
@@ -347,6 +406,7 @@ def serve_page_brewing_fermenting():
     for temp in tempList:
         dt_temp = datetime_from_sqlite(temp['timestamp'])
         formattedTempList.append({'year':int(dt_temp.year),'month':int(dt_temp.month),'day':int(dt_temp.day),'hour':int(dt_temp.hour) ,'minute':int(dt_temp.minute) ,'temp':temp['temperature']})
+    if (len(fermBrew)==1):
         return render_template('fermenting.html', fermBrew=fermBrew[0], tempList=formattedTempList, fermStats=fermStats)
     else:
         return render_template('fermenting.html', tempList=formattedTempList, fermStats=fermStats)
@@ -361,23 +421,6 @@ def serve_page_brewing_update_temp():
     db_execute("update chamber set avg = "+avg)
     return jsonify(result=True)
 
-@app.route('/get_chamber_set_data.html')
-def serve_page_brewing_get_chamber_set_data():
-    fermStats = db_execute("SELECT * FROM chamber")
-    return jsonify(set_temp=fermStats[0]['set_temp'],set_range=fermStats[0]['set_range'],temp_control_on=fermStats[0]['temp_control_on'])
-
-@app.route('/get_sec_per_oz_data.html')
-def serve_page_brewing_get_sec_per_oz_data():
-    tapFlowData = db_execute("SELECT * FROM tap_flow_data")
-    return jsonify(sec_per_oz=tapFlowData[0]['sec_per_oz'])
-
-@app.route('/update_sec_per_oz_data.html')
-def serve_page_brewing_update_sec_per_oz_data():
-    sec_per_oz = request.form['sec_per_oz']
-
-    # add latest sec per oz
-    db_execute("update tap_flow_data set sec_per_oz=,"+str(sec_per_oz)+";")
-    return jsonify(result=True)
 
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
@@ -747,6 +790,59 @@ def brewing_logout():
     session.pop('logged_in', None)
     flash('You were logged out')
     return redirect(url_for('serve_page_index'))
+
+## *********************** API *************************************************************
+@app.route('/get_chamber_set_data.html')
+def serve_page_brewing_get_chamber_set_data():
+    fermStats = db_execute("SELECT * FROM chamber")
+    return jsonify(set_temp=fermStats[0]['set_temp'],set_range=fermStats[0]['set_range'],temp_control_on=fermStats[0]['temp_control_on'])
+
+@app.route('/get_sec_per_oz_data.html')
+def serve_page_brewing_get_sec_per_oz_data():
+    tapFlowData = db_execute("SELECT * FROM tap_flow_data")
+    return jsonify(sec_per_oz=tapFlowData[0]['sec_per_oz'])
+
+@app.route('/update_sec_per_oz_data.html')
+def serve_page_brewing_update_sec_per_oz_data():
+    sec_per_oz = request.form['sec_per_oz']
+
+    # add latest sec per oz
+    dbStr = "update tap_flow_data set sec_per_oz="+str(sec_per_oz)+";"
+    db_execute(dbStr)
+    return jsonify(result=True)
+
+@app.route('/set_facial_recognition.html',methods=['POST'])
+def set_facial_recognition_api():
+    recognition_state = request.form['recognition_state']
+    poured_username = request.form['poured_username']
+    poured_age = request.form['poured_age']
+    poured_gender = request.form['poured_gender']
+
+    # add latest facial recognition data
+    dbStr = "update keg set "
+    dbStr += "recognition_state="+str(recognition_state)+", "
+    dbStr += "poured_username=\""+str(poured_username)+"\", "
+    dbStr += "poured_age="+str(poured_age)+", "
+    dbStr += "poured_gender=\""+str(poured_gender)+"\";"
+    print dbStr;
+    db_execute(dbStr);
+    return jsonify(result=True)
+
+@app.route('/update_tap.html',methods=['POST'])
+def serve_page_brewing_update_tap():
+    ozPoured = request.form['oz_poured']
+    beerOnTap = db_execute("select name,style from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg")
+
+    newVolume = kegData[0]['current_volume'] - int(ozPoured)
+    if (newVolume < 0):
+        newVolume = 0
+
+    db_execute("update keg set current_volume="+str(newVolume))
+    db_execute("update keg set last_pour_volume="+str(ozPoured))
+    db_execute("update keg set last_pour_time=DateTime('now')")
+    return jsonify(result=True)
+
 
 ### Helper fns #######################
 def db_execute(query):
