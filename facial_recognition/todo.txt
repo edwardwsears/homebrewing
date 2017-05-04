@@ -1,0 +1,4 @@
+TODO:
+
+1. add identify_face to tap_monitor.py
+2. move pending to tap_monitor as well?? or just at beginning of identify_face.py
