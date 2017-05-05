@@ -1,6 +1,7 @@
 from optparse import OptionParser
 from facial_recognition import facial_recognition
 from picamera import PiCamera
+import threading
 import sys
 import time
 ##regex
@@ -32,11 +33,16 @@ def Main():
     tapClosedTime = 0
     calibrationSizeOz = 16
 
+    accel_z_thresh = .3
+
     # pi camera init
     camera = PiCamera()
     camera.rotation=180
     camera.resolution = (2592,1944)
     camera.framerate = 15
+
+    #threading condition variables
+    facialRecognitionPending = threading.Event()
 
     if (options.do_calibrate == True):
         secPerOz = 0
@@ -60,7 +66,7 @@ def Main():
         if (tapOpened):
             ########################## IS OPENED ##################################
             #check if tap closed
-            if (abs(tapCurrPos - tapInitPos) < .2):
+            if (abs(tapCurrPos - tapInitPos) < accel_z_thresh):
                 ozPoured = 0
                 tapClosedTime = time.time()
                 pourTime = tapClosedTime - tapOpenedTime
@@ -69,7 +75,7 @@ def Main():
                     print str(round(Decimal(pourTime),2))+" seconds for "+str(calibrationSizeOz)+"oz"
                     secPerOz = pourTime/calibrationSizeOz
                     print str(round(Decimal(secPerOz),2))+" seconds per oz\n"
-                    send_oz_post(16)
+                    send_oz_post_threaded(16,facialRecognitionPending)
                     send_sec_per_oz_post(round(Decimal(secPerOz),2))
                     # TODO add sanity check here
                     calibrated = True;
@@ -77,16 +83,16 @@ def Main():
                     ozPoured =  pourTime / secPerOz
                     print "Beer poured: "+str(round(Decimal(ozPoured),2))+"oz in "+str(round(Decimal(pourTime),2))+" seconds on "+time.asctime( time.localtime(tapOpenedTime) );
                     if (ozPoured>1):
-                        send_oz_post(int(round(ozPoured)))
+                        send_oz_post_threaded(int(round(ozPoured)),facialRecognitionPending)
 
                 tapOpened = False
         else:
             ######################## IS CLOSED ####################################
-            if (abs(tapCurrPos - tapInitPos) > .2):
+            if (abs(tapCurrPos - tapInitPos) > accel_z_thresh):
                 if ((calibrated == False) and (options.do_calibrate == True)):
                     print "Calibrating for "+str(calibrationSizeOz)+"oz ..."
                 # Start facial recognition thread
-                facial_recognition.start_facial_recognition_thread(camera)
+                facial_recognition.start_facial_recognition_thread(camera, facialRecognitionPending)
                 tapOpenedTime = time.time()
                 tapOpened = True
 
@@ -96,8 +102,26 @@ def Main():
 
 ### END MAIN ####################################################
 
-def send_oz_post(val):
-    r = requests.post("http://www.searsbeers.com/update_tap.html", data={'oz_poured': val})
+class oz_post_thread(threading.Thread):
+    def __init__(self,val,facialRecognitionPending):
+        threading.Thread.__init__(self)
+        self.val = val
+        self.facialRecognitionPending = facialRecognitionPending
+    def run(self):
+        send_oz_post(self.val,self.facialRecognitionPending)
+
+def send_oz_post_threaded(val,facialRecognitionPending):
+    thread = oz_post_thread(val,facialRecognitionPending)
+    thread.start()
+
+def send_oz_post(val,facialRecognitionPending):
+    if (facialRecognitionPending.is_set()):
+        #facial recognition is pending, wait for it to return
+        facialRecognitionPending.wait()
+
+    #facial recognition is finished, send post
+    r = requests.post("http://www.searsbeers.com/update_tap.html", data={'oz_poured': val,'recognition_state': facial_recognition.face_state,'poured_username': facial_recognition.face_username,'poured_age': facial_recognition.face_age,'poured_gender': facial_recognition.face_gender})
+    return r;
 
 def send_sec_per_oz_post(val):
     r = requests.post("http://www.searsbeers.com/update_sec_per_oz_data.html", data={'sec_per_oz': val})

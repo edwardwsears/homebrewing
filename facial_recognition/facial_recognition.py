@@ -10,18 +10,24 @@ FACE_STATE_RECOGNIZED       = 1
 FACE_STATE_NOT_REGISTERED   = 2
 FACE_STATE_NO_FACE          = 3
 
-# Facial recognition thread
+face_state = ""
+face_username = ""
+face_age = 0
+face_gender = ""
+
+# Facial recognition api query thread
 class facial_recognition_thread(threading.Thread):
-    def __init__(self,camera):
+    def __init__(self,camera,facialRecognitionPending):
         threading.Thread.__init__(self)
         self.camera = camera
+        self.facialRecognitionPending = facialRecognitionPending
     def run(self):
-        facial_recognition(self.camera)
+        facial_recognition(self.camera,self.facialRecognitionPending)
 
 # Creates facial recognition thread and runs it
-def start_facial_recognition_thread(camera):
+def start_facial_recognition_thread(camera,facialRecognitionPending):
     if (threading.activeCount() == 1):
-        thread = facial_recognition_thread(camera)
+        thread = facial_recognition_thread(camera,facialRecognitionPending)
         thread.start()
     else:
         print "Thread still running, ignoring request"
@@ -31,7 +37,9 @@ def start_facial_recognition_thread(camera):
 # Takes picture and uses face_api.py to recognize face.
 # Updates searsbeers.com db for last pour stats
 #
-def facial_recognition(camera):
+def facial_recognition(camera,facialRecognitionPending):
+
+    facialRecognitionPending.set()
 
     #camera.annotate_text = "Hey there big boi"
     img_file = "/home/pi/homebrewing/facial_recognition/face_imgs/identify_img.jpg"
@@ -40,13 +48,13 @@ def facial_recognition(camera):
     camera.capture(img_file)
     camera.stop_preview()
 
-    send_recognition_post(FACE_STATE_PENDING,"",0,"");
     detect_response_json = face_api.detect_face(img_file)
 
     if (len(detect_response_json) == 0):
         # no faces detected
         print "No Faces Detected"
-        send_recognition_post(FACE_STATE_NO_FACE,"",0,"");
+        set_face_stats(FACE_STATE_NO_FACE,"",0,"");
+        facialRecognitionPending.clear()
         return
 
     identify_response_json = face_api.identify_face(detect_response_json[0]['faceId'])
@@ -57,12 +65,21 @@ def facial_recognition(camera):
         for person in list_persons_json:
             if (person['personId'] == identify_response_json[0]['candidates'][0]['personId']):
                 print "Person Detected: "+person['name']
-                send_recognition_post(FACE_STATE_RECOGNIZED,person['name'],detect_response_json[0]['faceAttributes']['age'],detect_response_json[0]['faceAttributes']['gender']);
+                set_face_stats(FACE_STATE_RECOGNIZED,person['name'],detect_response_json[0]['faceAttributes']['age'],detect_response_json[0]['faceAttributes']['gender']);
+                facialRecognitionPending.clear()
     else:
         # face detected, but not registered
         print "Detected unregistered face as a "+str(detect_response_json[0]['faceAttributes']['age'])+" yr old "+detect_response_json[0]['faceAttributes']['gender']
-        send_recognition_post(FACE_STATE_NOT_REGISTERED,'',detect_response_json[0]['faceAttributes']['age'],detect_response_json[0]['faceAttributes']['gender']);
+        set_face_stats(FACE_STATE_NOT_REGISTERED,'',detect_response_json[0]['faceAttributes']['age'],detect_response_json[0]['faceAttributes']['gender']);
+        facialRecognitionPending.clear()
 
-def send_recognition_post(recognition_state,poured_username,poured_age,poured_gender):
-    r = requests.post("http://www.searsbeers.com/set_facial_recognition.html", data={'recognition_state': recognition_state,'poured_username': poured_username,'poured_age': poured_age,'poured_gender': poured_gender})
-    return r;
+def set_face_stats(state,username,age,gender):
+    global face_state
+    global face_username
+    global face_age
+    global face_gender
+    face_state      = state
+    face_username   = username
+    face_age        = age
+    face_gender     = gender
+
