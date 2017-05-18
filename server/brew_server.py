@@ -313,11 +313,13 @@ def serve_page_brewing_on_tap():
 
     def edit_keg_stats_handler(obj_response,formData):
         #edit db
+        beerOnTap = db_execute("select id from brews where on_tap=1")
         dbStr = "update keg set "
         dbStr += " current_volume = "+str(formData['current-volume'])+","
         dbStr += " total_volume = "+str(formData['total-volume'])+","
         dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\"),"
         dbStr += " kick_date = date(\""+str(formData['kick-date'])+"\")"
+        dbStr += " where brew_id = "+str(beerOnTap[0]['id'])
         dbStr += ";"
         db_execute(dbStr)
         update_edit_keg_stat_table_handler(obj_response,0)
@@ -879,8 +881,8 @@ def serve_page_brewing_update_tap():
     db_execute(dbStr);
 
     # update keg status
-    db_execute("update keg set current_volume="+str(newVolume))
-    db_execute("update keg set last_pour_volume="+str(ozPoured))
+    db_execute("update keg set current_volume="+str(newVolume)+" where brew_id="+str(beerOnTap[0]['id']))
+    db_execute("update keg set last_pour_volume="+str(ozPoured)+" where brew_id="+str(beerOnTap[0]['id']))
     return jsonify(result=True)
 
 @app.route('/update_temp.html',methods=['POST'])
