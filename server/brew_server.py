@@ -9,6 +9,7 @@ import sqlite3
 import flask_sijax
 import os
 from datetime import datetime
+import time
 from decimal import *
 from pytz import timezone
 
@@ -76,13 +77,13 @@ def serve_page_brewing_on_tap():
             beersLeftString = "Beers Left: 0"
             obj_response.html("#beers_left",beersLeftString)
             return
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         beersLeftString = "Beers Left: " + str(beersLeft)
         obj_response.html("#beers_left",beersLeftString)
 
     def update_oz_left_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         ozLeftString =  str(kegData[0]['current_volume']) + "/" + str(kegData[0]['total_volume']) + " fl oz"
         obj_response.html("#oz_left",ozLeftString)
@@ -94,7 +95,7 @@ def serve_page_brewing_on_tap():
             img_src = url_for('static', filename=img_name)
             obj_response.attr("#keg_pic","src",img_src);
             return
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = float(kegData[0]['current_volume'])
         totalBeers = float(kegData[0]['total_volume'])
         beersLeftPercent = (beersLeft/totalBeers)*100;
@@ -243,7 +244,7 @@ def serve_page_brewing_on_tap():
         obj_response.script(scriptStr)
 
     def update_keg_stats_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         kegStatsString = ""
 
         #days since tap
@@ -282,7 +283,7 @@ def serve_page_brewing_on_tap():
 
     def update_edit_keg_stat_table_handler(obj_response, show):
         if (show == 1):
-            kegData = db_execute("SELECT * FROM keg")
+            kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
             scriptStr = """
             $("#keg_edit").html("\
                 <form id='keg-stat-form' class='pure-form pure-form-stacked' method='post' >\
@@ -293,6 +294,7 @@ def serve_page_brewing_on_tap():
                     <input name='total-volume' type='text' value='"""+str(kegData[0]['total_volume'])+"""' required>\
                     <label for='tap-date'>Tap Date</label>\
                     <input name='tap-date' type='date' value='"""+str(kegData[0]['tap_date'])+"""' required>\
+                    <input name='kick-date' type='date' value='"""+str(kegData[0]['kick_date'])+"""'>\
                     <h4>\
                         <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#keg-stat-form');Sijax.request('edit_keg_stats',[values])\\">Submit</a>\
                         <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_keg_stat_table',[0])\\">Done</a>\
@@ -314,13 +316,15 @@ def serve_page_brewing_on_tap():
         dbStr = "update keg set "
         dbStr += " current_volume = "+str(formData['current-volume'])+","
         dbStr += " total_volume = "+str(formData['total-volume'])+","
-        dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\")"
+        dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\"),"
+        dbStr += " kick_date = date(\""+str(formData['kick-date'])+"\")"
         dbStr += ";"
         db_execute(dbStr)
         update_edit_keg_stat_table_handler(obj_response,0)
 
     def update_last_pour_stats_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
+        pourHistory = db_execute("SELECT * FROM pour_history ORDER BY datetime(pour_time) desc")
         #usernameData = db_execute("SELECT * FROM usernames where username=")
         lastPourString = ""
 
@@ -328,20 +332,20 @@ def serve_page_brewing_on_tap():
         #FACE_STATE_RECOGNIZED=1
         #FACE_STATE_NOT_REGISTERED=2
         #FACE_STATE_NO_FACE=3
-        if (kegData[0]['recognition_state'] == FACE_STATE_PENDING or kegData[0]['recognition_state'] == FACE_STATE_NO_FACE):
+        if (pourHistory[0]['recognition_state'] == FACE_STATE_PENDING or pourHistory[0]['recognition_state'] == FACE_STATE_NO_FACE):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
-        elif (kegData[0]['recognition_state'] == FACE_STATE_RECOGNIZED):
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
+        elif (pourHistory[0]['recognition_state'] == FACE_STATE_RECOGNIZED):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
-            lastPourString += "by " + str(kegData[0]['poured_username']) + " <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
-        elif (kegData[0]['recognition_state'] == FACE_STATE_NOT_REGISTERED):
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz "
+            lastPourString += "by " + str(pourHistory[0]['poured_username']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
+        elif (pourHistory[0]['recognition_state'] == FACE_STATE_NOT_REGISTERED):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
-            lastPourString += "by a " + str(kegData[0]['poured_age']) + " yr old " + str(kegData[0]['poured_gender']) + " <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz "
+            lastPourString += "by a " + str(pourHistory[0]['poured_age']) + " yr old " + str(pourHistory[0]['poured_gender']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
 
         obj_response.html("#last_pour_stats",lastPourString)
 
@@ -369,9 +373,8 @@ def serve_page_brewing_on_tap():
     beerOnTap = db_execute("select * from brews where on_tap=1")
     if (len(beerOnTap)==0):
         return render_template('/on_tap.html', bottleData=bottleData, brewData=brewData, guestBottles=guestBottles)
-    kegData = db_execute("SELECT * FROM keg")
 
-    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
+    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
 
 @flask_sijax.route(app, '/fermenting.html')
 def serve_page_brewing_fermenting():
@@ -411,17 +414,6 @@ def serve_page_brewing_fermenting():
     else:
         return render_template('fermenting.html', tempList=formattedTempList, fermStats=fermStats)
 
-@app.route('/update_temp.html',methods=['POST'])
-def serve_page_brewing_update_temp():
-    temp = request.form['temp']
-    avg = request.form['average']
-
-    # add temp
-    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
-    db_execute("update chamber set avg = "+avg)
-    return jsonify(result=True)
-
-
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
     def submit_edit_stat_table_handler(obj_response,id,formData):
@@ -439,6 +431,11 @@ def serve_page_brewing_brews():
             db_execute(dbStr)
         if formData.has_key('is_on_tap'):
             is_on_tap = 1
+            dbStr = "insert into keg values(560,560,"
+            dbStr += "Date('now'), NULL"
+            dbStr += str(id)
+            dbStr += ")"
+            db_execute(dbStr)
         else:
             is_on_tap = 0
         if formData.has_key('is_fermenting'):
@@ -732,6 +729,11 @@ def serve_page_brewing_add_brew():
             is_in_bottles = 0
         if request.form.get('is_on_tap'):
             is_on_tap = 1
+            dbStr = "insert into keg values(560,560,"
+            dbStr += "Date('now'), NULL"
+            dbStr += str(request.form.get('brew-id'))
+            dbStr += ")"
+            db_execute(dbStr)
         else:
             is_on_tap = 0
         if request.form.get('is_fermenting'):
@@ -768,6 +770,45 @@ def serve_page_brewing_add_brew():
         #db_execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form.get('brew-name'), request.form.get('brew-type'),request.form.get('brew-date'), is_in_bottles, is_on_tap, is_fermenting])
         flash('New entry was successfully posted')
     return render_template('add_brew.html')
+
+@app.route('/history.html')
+def serve_page_history():
+    pourHistory = db_execute("SELECT * FROM pour_history ORDER BY datetime(pour_time) desc")
+    keg = db_execute("SELECT * FROM keg ORDER BY date(tap_date) desc")
+    brews = db_execute("select name,id from brews")
+
+    brewid_to_name = {}
+    for brew in brews:
+        brewid_to_name[brew['id']] = brew['name']
+
+    # Per beer beer/day average
+    perBeerAvg = []
+    for k in keg:
+        if (not k['kick_date']):
+            daysTapped = (datetime.now() - date_from_sqlite(k['tap_date'])).days
+        else:
+            daysTapped = (date_from_sqlite(k['kick_date']) - date_from_sqlite(k['tap_date'])).days
+
+        volumeDrank = k['total_volume'] - k['current_volume']
+        beersPerDay = (float(volumeDrank) / daysTapped) / 16
+        perBeerAvg += [{'id':k['brew_id'], 'bpd':beersPerDay}]
+
+    # Weekday percentage split
+    total_oz = 0
+    weekdayAverages = [0.0] * 7
+    cumulativeVolume = []
+    for history in reversed(pourHistory):
+        weekdayAverages[datetime_from_sqlite(history['pour_time']).weekday()] += history['pour_volume']
+        total_oz += history['pour_volume']
+        date_js = int(time.mktime(datetime_from_sqlite(history['pour_time']).timetuple())) * 1000
+        cumulativeVolume += [{'volume':total_oz,'pour_time':date_js}]
+
+    for day in range(0,6):
+        weekdayAverages[day] /= total_oz
+
+    # Monthly beers/day average
+
+    return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():
@@ -811,38 +852,46 @@ def serve_page_brewing_update_sec_per_oz_data():
     db_execute(dbStr)
     return jsonify(result=True)
 
-@app.route('/set_facial_recognition.html',methods=['POST'])
-def set_facial_recognition_api():
+@app.route('/update_tap.html',methods=['POST'])
+def serve_page_brewing_update_tap():
+    beerOnTap = db_execute("select name,style,id from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
+
+    ozPoured = request.form['oz_poured']
     recognition_state = request.form['recognition_state']
     poured_username = request.form['poured_username']
     poured_age = request.form['poured_age']
     poured_gender = request.form['poured_gender']
 
-    # add latest facial recognition data
-    dbStr = "update keg set "
-    dbStr += "recognition_state="+str(recognition_state)+", "
-    dbStr += "poured_username=\""+str(poured_username)+"\", "
-    dbStr += "poured_age="+str(poured_age)+", "
-    dbStr += "poured_gender=\""+str(poured_gender)+"\";"
-    print dbStr;
-    db_execute(dbStr);
-    return jsonify(result=True)
-
-@app.route('/update_tap.html',methods=['POST'])
-def serve_page_brewing_update_tap():
-    ozPoured = request.form['oz_poured']
-    beerOnTap = db_execute("select name,style from brews where on_tap=1")
-    kegData = db_execute("SELECT * FROM keg")
-
     newVolume = kegData[0]['current_volume'] - int(ozPoured)
     if (newVolume < 0):
         newVolume = 0
 
+    # add pour_history
+    dbStr = "insert into pour_history values("
+    dbStr += str(ozPoured)+", "
+    dbStr += "DateTime('now'), "
+    dbStr += str(recognition_state)+", "
+    dbStr += "\""+str(poured_username)+"\", "
+    dbStr += str(poured_age)+", "
+    dbStr += "\""+str(poured_gender)+"\", "
+    dbStr += str(beerOnTap[0]['id'])+");"
+    db_execute(dbStr);
+
+    # update keg status
     db_execute("update keg set current_volume="+str(newVolume))
     db_execute("update keg set last_pour_volume="+str(ozPoured))
-    db_execute("update keg set last_pour_time=DateTime('now')")
     return jsonify(result=True)
 
+@app.route('/update_temp.html',methods=['POST'])
+def serve_page_brewing_update_temp():
+    temp = request.form['temp']
+    avg = request.form['average']
+
+    # add temp
+    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
+    db_execute("update chamber set avg = "+avg)
+    return jsonify(result=True)
 
 ### Helper fns #######################
 def db_execute(query):
@@ -857,17 +906,21 @@ def db_execute_args(query,args):
     g.db.commit()
     return queryData
 
+@app.template_filter('datetime_pst')
 def datetime_pst(dt):
     # convert nieve to pacific
     dt_utc = dt.replace(tzinfo=timezone('UTC'))
     return dt_utc.astimezone(timezone('US/Pacific'))
 
+@app.template_filter('date_from_sqlite')
 def date_from_sqlite(dt):
     return datetime.strptime(dt,"%Y-%m-%d")
 
+@app.template_filter('datetime_from_sqlite')
 def datetime_from_sqlite(dt):
     return datetime.strptime(dt,"%Y-%m-%d %H:%M:%S")
 
+@app.template_filter('datetime_to_string')
 def datetime_to_string(dt):
     return dt.strftime("%Y-%m-%d %I:%M:%S %p")
 
