@@ -800,15 +800,13 @@ def serve_page_history():
     weekdayAverages = [0.0] * 7
     cumulativeVolume = []
     for history in reversed(pourHistory):
-        weekdayAverages[datetime_from_sqlite(history['pour_time']).weekday()] += history['pour_volume']
+        weekdayAverages[datetime_pst(datetime_from_sqlite(history['pour_time'])).weekday()] += history['pour_volume']
         total_oz += history['pour_volume']
         date_js = int(time.mktime(datetime_from_sqlite(history['pour_time']).timetuple())) * 1000
         cumulativeVolume += [{'volume':total_oz,'pour_time':date_js}]
 
-    for day in range(0,6):
+    for day in range(0,7):
         weekdayAverages[day] /= total_oz
-
-    # Monthly beers/day average
 
     return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
 
