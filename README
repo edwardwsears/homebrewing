@@ -1,12 +1,14 @@
 FERMENTATION CONTROLLER:
 1. Upload get_temp/get_temp.ino to arduino.
-2. %> python ferm_chamber_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range> --{cool|heat|dual_stage}
 
-EKETTLE CONTROLLER:
-%> python ekettle_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range>
 To find ip of raspberry pi:
 %> arp -a //then try all these with pi@<ip>
 %> nmap -sP 192.168.0.*
+
+2. %> python ferm_chamber_controller_v2.py
+
+EKETTLE CONTROLLER:
+%> python ekettle_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range>
 
 WEBSITE:
 
