@@ -29,6 +29,8 @@ for index in range(start_index, end_index):
             # add a space around <> tags so that they are split into independent words in train.py
             page_text = re.sub("<", " <", page_text)
             page_text = re.sub(">", "> ", page_text)
+            page_text = re.sub("&#13;", "\n", page_text)
+
             output_file.write(page_text.encode('ascii', 'ignore'))
             tot_count = tot_count + 1;
 
