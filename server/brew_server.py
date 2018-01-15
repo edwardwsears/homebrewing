@@ -14,7 +14,7 @@ from decimal import *
 from pytz import timezone
 
 #config
-localTest = False;
+localTest = True;
 if (localTest):
     DATABASE='brew_server.sql'
 else:
@@ -68,11 +68,10 @@ def serve_page_index():
 
     return render_template('/index.html', bottleData=bottleData,brewData=brewData, tempList=tempList, guestBottles=guestBottles)
 
-
 @flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
     def update_beers_left_handler(obj_response):
-        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        beerOnTap = db_execute("select name, style from brews where on_tap=1")
         if (len(beerOnTap)==0):
             beersLeftString = "Beers Left: 0"
             obj_response.html("#beers_left",beersLeftString)
@@ -600,8 +599,8 @@ def serve_page_brewing_brews():
             </table>\
             ");
             """
-        ########################### END HOPS ###################################
-        ########################### BEGIN HOPS ###################################
+        ########################### END GRAIN ##################################
+        ########################### BEGIN HOPS #################################
         displayHops = db_execute("SELECT * FROM hops where id="+str(id)+" order by boil_minutes desc")
         scriptStr += """
             $("#hopsTable").html("\
@@ -630,7 +629,7 @@ def serve_page_brewing_brews():
             ");
             """
         ########################### END HOPS ###################################
-        ########################### BEGIN yeast ###################################
+        ########################### BEGIN yeast ################################
         displayYeast = db_execute("SELECT * FROM yeast where id="+str(id))
         scriptStr += """
             $("#yeastTable").html("\
@@ -656,8 +655,8 @@ def serve_page_brewing_brews():
         </table>\
         ");
         """
-        ########################### END YEAST ###################################
-        ########################### BEGIN water ###################################
+        ########################### END YEAST ##################################
+        ########################### BEGIN WATER ################################
         displayWater = db_execute_args("SELECT * FROM water where profile_name=?",[displayBrew[0]['water_profile']])
         scriptStr += """
             $("#waterTable").html("\
@@ -703,7 +702,7 @@ def serve_page_brewing_brews():
         scriptStr += """\
         ");
         """
-        ########################### END YEAST ###################################
+        ########################### END WATER ##################################
         obj_response.script(scriptStr)
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
@@ -717,8 +716,6 @@ def serve_page_brewing_brews():
     if request.method == 'GET':
         selectBrewId = request.args.get("selectBrewId")
         return render_template('brews.html', brews=brews, selectBrewId=selectBrewId)
-    return render_template('brews.html', brews=brews)
-
 
     return render_template('brews.html', brews=brews)
 
@@ -809,6 +806,10 @@ def serve_page_history():
         weekdayAverages[day] /= total_oz
 
     return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
+
+@app.route('/ai_brewmaster.html')
+def serve_page_brewing_ai_brewmaster():
+    return render_template('/ai_brewmaster.html')
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():

@@ -8,3 +8,14 @@
 7. [ ] update website to input/display beerxml for recipes.
 8. [ ] Use beerxml to calculate recipe stats (instead of incorrect nn data).
 9. [ ] Add page to display recipe on website
+
+= TODO for webpage =
+1. add input for beer name
+2. add input for size scaling (have defaults)
+3. export beerxml of recipe
+4. show style?
+    1. parse xml or ues bjcp styles and fit.
+5. pull request to add time for hops
+    1. https://github.com/homebrewing/brauhaus-beerxml/blob/master/src/import.coffee
+6. issue with hop ammounts (lbs? kgs?, not oz for sure)
+7. move xml yeast temp to primary temp number
