@@ -704,6 +704,7 @@ def serve_page_brewing_brews():
         """
         ########################### END WATER ##################################
         obj_response.script(scriptStr)
+
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brews.html')
@@ -807,8 +808,126 @@ def serve_page_history():
 
     return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
 
-@app.route('/ai_brewmaster.html')
+@flask_sijax.route(app, '/ai_brewmaster.html')
 def serve_page_brewing_ai_brewmaster():
+    def submit_brew_name_handler(obj_response,formData):
+
+        # TODO Generate beerxml recipe
+        if formData['brew_name'] == "":
+            obj_response.script("")
+            return
+        beerxml = "<RECIPES> <RECIPE> <NAME>"+formData['brew_name']+"</NAME> <VERSION>1</VERSION> <TYPE>All Grain</TYPE> <BREWER>Beerfan</BREWER> <DISPLAY_BATCH_SIZE>6.5 gal</DISPLAY_BATCH_SIZE> <DISPLAY_BOIL_SIZE>7.75 gal</DISPLAY_BOIL_SIZE> <BATCH_SIZE>24.60517657</BATCH_SIZE> <BOIL_SIZE>29.336941295</BOIL_SIZE> <BOIL_TIME>70</BOIL_TIME> <EFFICIENCY>79</EFFICIENCY> <NOTES>if your like me and love hops just add an ounce of Cascade to your keg, let it slow carbonate for a 3 or 4 days then take it out and enjoy a great beer! &#13; &#13; Adjust your caramel 60L and shoot for an SRM of 8. </NOTES> <EST_COLOR>8</EST_COLOR> <IBU>39.79</IBU> <IBU_METHOD>Tinseth</IBU_METHOD> <EST_ABV>5.58</EST_ABV> <EST_OG>1.055 sg</EST_OG> <EST_FG>1.013 sg</EST_FG> <OG>1.055</OG> <FG>1.013</FG> <PRIMING_SUGAR_NAME></PRIMING_SUGAR_NAME> <CARBONATION_USED></CARBONATION_USED> <BF_PRIMING_METHOD></BF_PRIMING_METHOD> <BF_PRIMING_AMOUNT></BF_PRIMING_AMOUNT> <BF_CO2_LEVEL></BF_CO2_LEVEL> <BF_CO2_UNIT>Volumes</BF_CO2_UNIT> <URL></URL> <BATCH_SIZE_MODE>f</BATCH_SIZE_MODE> <YEAST_STARTER>true</YEAST_STARTER> <NO_CHILL_EXTRA_MINUTES></NO_CHILL_EXTRA_MINUTES> <PITCH_RATE>1.0</PITCH_RATE> <FERMENTABLES> <FERMENTABLE> <NAME>Pale 2-Row</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>5.216312255</AMOUNT> <YIELD>80.43</YIELD> <COLOR>1.8</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> <FERMENTABLE> <NAME>Caramel / Crystal 60L</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>0.412202065874</AMOUNT> <YIELD>73.91</YIELD> <COLOR>60</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> </FERMENTABLES> <HOPS> <HOP> <NAME>Magnum</NAME> <VERSION>1</VERSION> <ALPHA>15</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>60</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Perle</NAME> <VERSION>1</VERSION> <ALPHA>8.2</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>30</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0283495231</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>10</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <TIME>0</TIME> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <USE>Dry Hop</USE> <USER_HOP_USE>Dry Hop</USER_HOP_USE> <TIME>5760</TIME> <FORM>Pellet</FORM> </HOP> </HOPS> <MISCS> <MISC> <NAME>Crush whilrfoc Tablet</NAME> <VERSION>1</VERSION> <TYPE>Water Agent</TYPE> <USE>Boil</USE> <TIME>10</TIME> <AMOUNT>1</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> </MISC> </MISCS> <MASH> <NAME>Mash Steps</NAME>";
+        beerxml += "<VERSION>1</VERSION> <GRAIN_TEMP>20</GRAIN_TEMP> <MASH_STEPS> <MASH_STEP> <NAME>Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>60</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>67.222222222222</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Mash-out Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT></INFUSE_AMOUNT> <STEP_TEMP>75.555555555556</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Sparge</NAME> <VERSION>1</VERSION> <TYPE>Infusion</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>76.666666666667</STEP_TEMP> </MASH_STEP> </MASH_STEPS> </MASH> <YEASTS> <YEAST> <NAME>Safale - American Ale Yeast US-05</NAME> <VERSION>1</VERSION> <TYPE>Ale</TYPE> <FORM>Dry</FORM> <AMOUNT>0.11</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> <PRODUCT_ID>US-05</PRODUCT_ID> <LABORATORY>Fermentis / Safale</LABORATORY> <ATTENUATION>76</ATTENUATION> <FLOCCULATION>Medium</FLOCCULATION> <MIN_TEMPERATURE>12.222222222222</MIN_TEMPERATURE> <MAX_TEMPERATURE>25</MAX_TEMPERATURE> </YEAST> </YEASTS> <WATERS/> <STYLE> <NAME>American Pale Ale</NAME> <VERSION>1</VERSION> <CATEGORY>American Ale</CATEGORY> <CATEGORY_NUMBER>10</CATEGORY_NUMBER> <STYLE_LETTER>A</STYLE_LETTER> <STYLE_GUIDE>BJCP</STYLE_GUIDE> <TYPE>Ale</TYPE> <OG_MIN>1.045</OG_MIN> <OG_MAX>1.06</OG_MAX> <FG_MIN>1.01</FG_MIN> <FG_MAX>1.015</FG_MAX> <ABV_MIN>4.5</ABV_MIN> <ABV_MAX>6.2</ABV_MAX> <IBU_MIN>30</IBU_MIN> <IBU_MAX>45</IBU_MAX> <COLOR_MIN>5</COLOR_MIN> <COLOR_MAX>14</COLOR_MAX> </STYLE> </RECIPE> </RECIPES>";
+
+        # Get a list of recipes 
+        scriptStr = ""
+        scriptStr += """var recipes = Brauhaus.Recipe.fromBeerXml(" """+beerxml+""" ");"""
+
+        scriptStr += """var r = recipes[0];"""
+        scriptStr += """r.scale(Brauhaus.gallonsToLiters(5),Brauhaus.gallonsToLiters(6.5));"""
+        scriptStr += """r.calculate();"""
+
+        scriptStr += """var main_html = "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """main_html += "<thead>";"""
+        scriptStr += """main_html += "    <tr>";"""
+        scriptStr += """main_html += "        <th>Beer Stats </th>";"""
+        scriptStr += """main_html += "    </tr>";"""
+        scriptStr += """main_html += "</thead>";"""
+        scriptStr += """main_html += "<tbody>";"""
+        scriptStr += """main_html += "           <tr>";"""
+        scriptStr += """main_html += "               <td>";"""
+        scriptStr += """main_html += "                  <h1> "+r.name+" </h1>";"""
+        scriptStr += """main_html += "                  <h4>";"""
+        scriptStr += """main_html += "                      description TODO";"""
+        scriptStr += """main_html += "                  </h4>";"""
+        scriptStr += """main_html += "                  <h4>";"""
+        scriptStr += """main_html += "                      Style: style TODO <br>";"""
+        scriptStr += """main_html += "                      OG: "+r.og.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                      ABV: "+r.abv.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                      IBU: "+r.ibu.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                  </h4>";"""
+        scriptStr += """main_html += "               </td>";"""
+        scriptStr += """main_html += "           </tr>";"""
+        scriptStr += """main_html += "   </tbody>";"""
+        scriptStr += """main_html += "</table>";"""
+        scriptStr += """$("#main").html(main_html);"""
+
+        # HOPS
+        scriptStr += """var hops_html = "    <br><h3>Hops:</h3>";"""
+        scriptStr += """hops_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """hops_html += "<thead>";"""
+        scriptStr += """hops_html += "    <tr>";"""
+        scriptStr += """hops_html += "        <th>Hop Type </th>";"""
+        scriptStr += """hops_html += "        <th>Amount in oz </th>";"""
+        scriptStr += """hops_html += "        <th>Boil Minutes </th>";"""
+        scriptStr += """hops_html += "    </tr>";"""
+        scriptStr += """hops_html += "</thead>";"""
+        scriptStr += """hops_html += "<tbody>";"""
+
+        scriptStr += """var hops = r.spices;"""
+        scriptStr += """for (var i=0; i<hops.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    hops_html += "           <tr>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].name+"</td>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].weightLbOz().oz.toFixed(2)+"</td>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].time+"</td>";"""
+        scriptStr += """    hops_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """hops_html += "   </tbody>";"""
+        scriptStr += """hops_html += "</table>";"""
+        scriptStr += """$("#hops").html(hops_html);"""
+
+        ## GRAIN
+        scriptStr += """var grain_html = "    <br><h3>Grain:</h3>";"""
+        scriptStr += """grain_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """grain_html += "<thead>";"""
+        scriptStr += """grain_html += "    <tr>";"""
+        scriptStr += """grain_html += "     <th>Grain Type </th>";"""
+        scriptStr += """grain_html += "     <th>Amount in Lbs </th>";"""
+        scriptStr += """grain_html += "    </tr>";"""
+        scriptStr += """grain_html += "</thead>";"""
+        scriptStr += """grain_html += "<tbody>";"""
+
+        scriptStr += """var grain = r.fermentables;"""
+        scriptStr += """for (var i=0; i<grain.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    grain_html += "           <tr>";"""
+        scriptStr += """    grain_html += "               <td> "+grain[i].name+"</td>";"""
+        scriptStr += """    grain_html += "               <td> "+grain[i].weightLb().toFixed(2)+"</td>";"""
+        scriptStr += """    grain_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """grain_html += "   </tbody>";"""
+        scriptStr += """grain_html += "</table>";"""
+        scriptStr += """$("#grain").html(grain_html);"""
+
+        ## YEAST
+        scriptStr += """var yeast_html = "    <br><h3>Yeast:</h3>";"""
+        scriptStr += """yeast_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """yeast_html += "<thead>";"""
+        scriptStr += """yeast_html += "    <tr>";"""
+        scriptStr += """yeast_html += "     <th>Yeast Type </th>";"""
+        scriptStr += """yeast_html += "     <th>Fermentation Temperature </th>";"""
+        scriptStr += """yeast_html += "    </tr>";"""
+        scriptStr += """yeast_html += "</thead>";"""
+        scriptStr += """yeast_html += "<tbody>";"""
+
+        scriptStr += """var yeast = r.yeast;"""
+        scriptStr += """for (var i=0; i<yeast.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    yeast_html += "           <tr>";"""
+        scriptStr += """    yeast_html += "               <td> "+yeast[i].name+"</td>";"""
+        scriptStr += """    yeast_html += "               <td> "+Brauhaus.cToF(r.primaryTemp)+"</td>";"""
+        scriptStr += """    yeast_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """yeast_html += "   </tbody>";"""
+        scriptStr += """yeast_html += "</table>";"""
+        scriptStr += """$("#yeast").html(yeast_html);"""
+        obj_response.script(scriptStr)
+    if g.sijax.is_sijax_request:
+        # Sijax request detected - let Sijax handle it
+        g.sijax.set_request_uri('/ai_brewmaster.html')
+        g.sijax.register_callback('submit_brew_name', submit_brew_name_handler)
+        return g.sijax.process_request()
     return render_template('/ai_brewmaster.html')
 
 @app.route('/login.html', methods=['GET', 'POST'])

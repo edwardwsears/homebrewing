@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery-grid.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_brews.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_landing.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/grids-responsive-min.css') }}">
 
     <script src="{{ url_for('static', filename='jquery-1.11.2.min.js') }}"></script>
@@ -21,7 +21,6 @@
     <script src="{{ url_for('static', filename='brauhausjs/brauhaus.min.js') }}"></script>
     <script src="{{ url_for('static', filename='brauhausjs/brauhaus-beerxml.min.js') }}"></script>
     <script src="{{ url_for('static', filename='brauhausjs/brauhaus-styles.min.js') }}"></script>
-
 
 </head>
 
@@ -52,132 +51,44 @@
         <h1 class="banner-head">
             AI Brewmaster
         </h1>
+        <p class="banner-subhead">
+        AI Brewmaster uses deep learning and recipes from brewersfriend.com <br>
+            to create recipes based on brew name.<br>
+            Technical details can be found at github.com/asdfasdf
+        </p>
     </div>
 <div class="l-content">
 <div class="pure-g" >
+
+    <div class="pure-u-1-24"> </div>
+    <div id="input_div" class="pure-u-22-24">
+        <h3>Enter Brew Name</h3>
+        <div class="pure-g" id="name_field">
+          <div class="pure-u-1-3">
+                <form id="brew_name_form">
+                    <input name="brew_name" id="brew_name" class="pure-u-23-24" type="text" placeholder="SearsBeers IPA">
+                </form>
+          </div>
+        </div>
+        <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick='var values = Sijax.getFormValues("#brew_name_form");Sijax.request("submit_brew_name",[values])'>Submit</a>
+        <h3></h3>
+    </div>
+    <div class="pure-u-1-24"> </div>
+
     <div class="pure-u-1-24"> </div>
     <div id="main" class="pure-u-22-24">
-        <script>
-            // Pull beerxml recipe
-
-            var beerxml = "<RECIPES> <RECIPE> <NAME>Sierra Nevada Pale Ale Clone</NAME> <VERSION>1</VERSION> <TYPE>All Grain</TYPE> <BREWER>Beerfan</BREWER> <DISPLAY_BATCH_SIZE>6.5 gal</DISPLAY_BATCH_SIZE> <DISPLAY_BOIL_SIZE>7.75 gal</DISPLAY_BOIL_SIZE> <BATCH_SIZE>24.60517657</BATCH_SIZE> <BOIL_SIZE>29.336941295</BOIL_SIZE> <BOIL_TIME>70</BOIL_TIME> <EFFICIENCY>79</EFFICIENCY> <NOTES>if your like me and love hops just add an ounce of Cascade to your keg, let it slow carbonate for a 3 or 4 days then take it out and enjoy a great beer! &#13; &#13; Adjust your caramel 60L and shoot for an SRM of 8. </NOTES> <EST_COLOR>8</EST_COLOR> <IBU>39.79</IBU> <IBU_METHOD>Tinseth</IBU_METHOD> <EST_ABV>5.58</EST_ABV> <EST_OG>1.055 sg</EST_OG> <EST_FG>1.013 sg</EST_FG> <OG>1.055</OG> <FG>1.013</FG> <PRIMING_SUGAR_NAME></PRIMING_SUGAR_NAME> <CARBONATION_USED></CARBONATION_USED> <BF_PRIMING_METHOD></BF_PRIMING_METHOD> <BF_PRIMING_AMOUNT></BF_PRIMING_AMOUNT> <BF_CO2_LEVEL></BF_CO2_LEVEL> <BF_CO2_UNIT>Volumes</BF_CO2_UNIT> <URL></URL> <BATCH_SIZE_MODE>f</BATCH_SIZE_MODE> <YEAST_STARTER>true</YEAST_STARTER> <NO_CHILL_EXTRA_MINUTES></NO_CHILL_EXTRA_MINUTES> <PITCH_RATE>1.0</PITCH_RATE> <FERMENTABLES> <FERMENTABLE> <NAME>Pale 2-Row</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>5.216312255</AMOUNT> <YIELD>80.43</YIELD> <COLOR>1.8</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> <FERMENTABLE> <NAME>Caramel / Crystal 60L</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>0.412202065874</AMOUNT> <YIELD>73.91</YIELD> <COLOR>60</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> </FERMENTABLES> <HOPS> <HOP> <NAME>Magnum</NAME> <VERSION>1</VERSION> <ALPHA>15</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>60</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Perle</NAME> <VERSION>1</VERSION> <ALPHA>8.2</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>30</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0283495231</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>10</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <TIME>0</TIME> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <USE>Dry Hop</USE> <USER_HOP_USE>Dry Hop</USER_HOP_USE> <TIME>5760</TIME> <FORM>Pellet</FORM> </HOP> </HOPS> <MISCS> <MISC> <NAME>Crush whilrfoc Tablet</NAME> <VERSION>1</VERSION> <TYPE>Water Agent</TYPE> <USE>Boil</USE> <TIME>10</TIME> <AMOUNT>1</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> </MISC> </MISCS> <MASH> <NAME>Mash Steps</NAME>";
-            beerxml += "<VERSION>1</VERSION> <GRAIN_TEMP>20</GRAIN_TEMP> <MASH_STEPS> <MASH_STEP> <NAME>Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>60</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>67.222222222222</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Mash-out Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT></INFUSE_AMOUNT> <STEP_TEMP>75.555555555556</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Sparge</NAME> <VERSION>1</VERSION> <TYPE>Infusion</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>76.666666666667</STEP_TEMP> </MASH_STEP> </MASH_STEPS> </MASH> <YEASTS> <YEAST> <NAME>Safale - American Ale Yeast US-05</NAME> <VERSION>1</VERSION> <TYPE>Ale</TYPE> <FORM>Dry</FORM> <AMOUNT>0.11</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> <PRODUCT_ID>US-05</PRODUCT_ID> <LABORATORY>Fermentis / Safale</LABORATORY> <ATTENUATION>76</ATTENUATION> <FLOCCULATION>Medium</FLOCCULATION> <MIN_TEMPERATURE>12.222222222222</MIN_TEMPERATURE> <MAX_TEMPERATURE>25</MAX_TEMPERATURE> </YEAST> </YEASTS> <WATERS/> <STYLE> <NAME>American Pale Ale</NAME> <VERSION>1</VERSION> <CATEGORY>American Ale</CATEGORY> <CATEGORY_NUMBER>10</CATEGORY_NUMBER> <STYLE_LETTER>A</STYLE_LETTER> <STYLE_GUIDE>BJCP</STYLE_GUIDE> <TYPE>Ale</TYPE> <OG_MIN>1.045</OG_MIN> <OG_MAX>1.06</OG_MAX> <FG_MIN>1.01</FG_MIN> <FG_MAX>1.015</FG_MAX> <ABV_MIN>4.5</ABV_MIN> <ABV_MAX>6.2</ABV_MAX> <IBU_MIN>30</IBU_MIN> <IBU_MAX>45</IBU_MAX> <COLOR_MIN>5</COLOR_MIN> <COLOR_MAX>14</COLOR_MAX> </STYLE> </RECIPE> </RECIPES>";
-
-            // Get a list of recipes 
-            var recipes = Brauhaus.Recipe.fromBeerXml(beerxml);
-
-            var r = recipes[0];
-            r.scale(Brauhaus.gallonsToLiters(5),Brauhaus.gallonsToLiters(6.5));
-            //console.log('There are ' + recipes.length + ' recipes.');
-            r.calculate();
-
-            var main_html = "<table class='pure-table pure-table-bordered'>";
-            main_html += "<thead>";
-            main_html += "    <tr>";
-            main_html += "        <th>Beer Stats </th>";
-            main_html += "    </tr>";
-            main_html += "</thead>";
-            main_html += "<tbody>";
-            main_html += "           <tr>";
-            main_html += "               <td>";
-            main_html += "                  <h1> "+r.name+" </h1>";
-            main_html += "                  <h4>";
-            main_html += "                      description TODO";
-            main_html += "                  </h4>";
-            main_html += "                  <h4>";
-            main_html += "                      Style: style TODO <br>";
-            main_html += "                      OG: "+r.og.toFixed(2)+" <br>";
-            main_html += "                      ABV: "+r.abv.toFixed(2)+" <br>";
-            main_html += "                      IBU: "+r.ibu.toFixed(2)+" <br>";
-            main_html += "                  </h4>";
-            main_html += "               </td>";
-            main_html += "           </tr>";
-            main_html += "   </tbody>";
-            main_html += "</table>";
-            $("#main").html(main_html);
-        </script>
     </div>
     <div class="pure-u-1-24"> </div>
+
     <div class="pure-u-md-1-24"> </div>
     <div id="hops" class="pure-u-1 pure-u-md-11-24">
-        <script>
-            var hops_html = "    <br><h3>Hops:</h3>";
-            hops_html += "<table class='pure-table pure-table-bordered'>";
-            hops_html += "<thead>";
-            hops_html += "    <tr>";
-            hops_html += "        <th>Hop Type </th>";
-            hops_html += "        <th>Amount in oz </th>";
-            hops_html += "        <th>Boil Minutes </th>";
-            hops_html += "    </tr>";
-            hops_html += "</thead>";
-            hops_html += "<tbody>";
-
-            var hops = r.spices
-            for (var i=0; i<hops.length; i++)
-            {
-                hops_html += "           <tr>";
-                hops_html += "               <td> "+hops[i].name+"</td>";
-                hops_html += "               <td> "+hops[i].weightLbOz().oz.toFixed(2)+"</td>";
-                hops_html += "               <td> "+hops[i].time+"</td>";
-                hops_html += "           </tr>";
-            }
-            hops_html += "   </tbody>";
-            hops_html += "</table>";
-            $("#hops").html(hops_html);
-        </script>
     </div>
     <div id="grain" class="pure-u-1 pure-u-md-11-24">
-        <script>
-            var grain_html = "    <br><h3>Grain:</h3>";
-            grain_html += "<table class='pure-table pure-table-bordered'>";
-            grain_html += "<thead>";
-            grain_html += "    <tr>";
-            grain_html += "     <th>Grain Type </th>";
-            grain_html += "     <th>Amount in Lbs </th>";
-            grain_html += "    </tr>";
-            grain_html += "</thead>";
-            grain_html += "<tbody>";
-
-            var grain = r.fermentables
-            for (var i=0; i<grain.length; i++)
-            {
-                grain_html += "           <tr>";
-                grain_html += "               <td> "+grain[i].name+"</td>";
-                grain_html += "               <td> "+grain[i].weightLb().toFixed(2)+"</td>";
-                grain_html += "           </tr>";
-            }
-            grain_html += "   </tbody>";
-            grain_html += "</table>";
-            $("#grain").html(grain_html);
-        </script>
     </div>
     <div class="pure-u-md-1-24"> </div>
 
     <div class="pure-u-md-1-24"> </div>
     <div id="yeast" class="pure-u-1 pure-u-md-11-24">
-        <script>
-            var yeast_html = "    <br><h3>Yeast:</h3>";
-            yeast_html += "<table class='pure-table pure-table-bordered'>";
-            yeast_html += "<thead>";
-            yeast_html += "    <tr>";
-            yeast_html += "     <th>Yeast Type </th>";
-            yeast_html += "     <th>Fermentation Temperature </th>";
-            yeast_html += "    </tr>";
-            yeast_html += "</thead>";
-            yeast_html += "<tbody>";
-
-            var yeast = r.yeast
-            for (var i=0; i<yeast.length; i++)
-            {
-                yeast_html += "           <tr>";
-                yeast_html += "               <td> "+yeast[i].name+"</td>";
-                yeast_html += "               <td> "+Brauhaus.cToF(r.primaryTemp)+"</td>";
-                yeast_html += "           </tr>";
-            }
-            yeast_html += "   </tbody>";
-            yeast_html += "</table>";
-            $("#yeast").html(yeast_html);
-        </script>
     </div>
     <div class="pure-u-1-md-24"> </div>
 
