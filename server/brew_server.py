@@ -14,11 +14,11 @@ from decimal import *
 from pytz import timezone
 
 #config
-localTest = True;
+localTest = False;
 if (localTest):
-    DATABASE='brew_server.sql'
+    DATABASE='db_brew_server.sql'
 else:
-    DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
+    DATABASE='/home/ubuntu/homebrewing/server/db_brew_server.sql'
 
 DEBUG=True
 SECRET_KEY='key'

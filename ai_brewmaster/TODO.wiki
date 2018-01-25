@@ -10,7 +10,7 @@
 9. [ ] Add page to display recipe on website
 
 = TODO for webpage =
-1. add input for beer name
+1. [X] add input for beer name
 2. add input for size scaling (have defaults)
 3. export beerxml of recipe
 4. show style?
