@@ -808,8 +808,8 @@ def serve_page_history():
 
     return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
 
-@flask_sijax.route(app, '/ai_brewmaster.html')
-def serve_page_brewing_ai_brewmaster():
+@flask_sijax.route(app, '/brewai.html')
+def serve_page_brewing_brewai():
     def submit_brew_name_handler(obj_response,formData):
 
         # TODO Generate beerxml recipe
@@ -925,10 +925,10 @@ def serve_page_brewing_ai_brewmaster():
         obj_response.script(scriptStr)
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
-        g.sijax.set_request_uri('/ai_brewmaster.html')
+        g.sijax.set_request_uri('/brewai.html')
         g.sijax.register_callback('submit_brew_name', submit_brew_name_handler)
         return g.sijax.process_request()
-    return render_template('/ai_brewmaster.html')
+    return render_template('/brewai.html')
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():
