@@ -9,13 +9,13 @@ import json
 header_img = {
     # Request headers
     'Content-Type': 'application/octet-stream',
-    'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+    'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
 }
 
 header_json = {
     # Request headers
     'Content-Type': 'application/json',
-    'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+    'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
 }
 
 params_detect = urllib.urlencode({
@@ -30,7 +30,7 @@ def create_person(name):
     headers = {
         # Request headers
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+        'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
     }
 
     body = """{
@@ -54,7 +54,7 @@ def delete_person(personId):
     headers = {
         # Request headers
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+        'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
     }
 
     params = {
@@ -80,7 +80,7 @@ def list_persons():
     headers = {
         # Request headers
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+        'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
     }
 
     try:
@@ -149,7 +149,7 @@ def add_face(img_path,personId,detect_response_json):
 def train_person_group():
     headers = {
         # Request headers
-        'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+        'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
     }
 
     try:
@@ -169,7 +169,7 @@ def train_person_group():
 def get_training_status():
     headers = {
         # Request headers
-        'Ocp-Apim-Subscription-Key': 'f0e6ec912a504ef4bec3129aae1ce07d',
+        'Ocp-Apim-Subscription-Key': '957df494c5ca4dcbbad75f45496fd38a',
     }
 
     try:
