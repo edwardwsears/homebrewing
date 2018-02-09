@@ -1,0 +1,21 @@
+= TODO =
+1. [X] Word based? python instead of lua? (LSTM RNN Model)
+2. [ ] scrape and download beerxml recipes
+3. [ ] add start_text to sample
+4. [ ] update/remove length to end after end beerxml tag
+5. [ ] correct end tags as they come? otherwise, check validity of tags, rerun
+6. [ ] V2: update start_text as style as well.
+7. [ ] update website to input/display beerxml for recipes.
+8. [ ] Use beerxml to calculate recipe stats (instead of incorrect nn data).
+9. [ ] Add page to display recipe on website
+
+= TODO for webpage =
+1. [X] add input for beer name
+2. add input for size scaling (have defaults)
+3. export beerxml of recipe
+4. show style?
+    1. parse xml or ues bjcp styles and fit.
+5. pull request to add time for hops
+    1. https://github.com/homebrewing/brauhaus-beerxml/blob/master/src/import.coffee
+6. issue with hop ammounts (lbs? kgs?, not oz for sure)
+7. move xml yeast temp to primary temp number

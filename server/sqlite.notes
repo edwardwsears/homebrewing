@@ -1,5 +1,5 @@
 Running:
-%> sqlite3 brew_server.sql
+%> sqlite3 db_brew_server.sql
 
 Show tables:
 %> .tables

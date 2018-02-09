@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Landing page for searsbeers.com.">
+
+    <title>Sears Beers</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/pure-min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery-grid.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layouts/gallery.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sears_beers_landing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pure-release-0.6.0/grids-responsive-min.css') }}">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/sijax/sijax.js"></script>
+    <script type="text/javascript"> {{ g.sijax.get_js()|safe }} </script>
+
+    <!-- brauhaus.js includes -->
+    <script src="{{ url_for('static', filename='brauhausjs/brauhaus.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='brauhausjs/brauhaus-beerxml.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='brauhausjs/brauhaus-styles.min.js') }}"></script>
+
+</head>
+
+<body>
+
+<div>
+    <div class="header">
+        <div class="pure-menu pure-menu-horizontal pure-menu-scrollable">
+            <a class="pure-menu-heading" href="index.html">Sears Beers</a>
+
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
+                <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
+                <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
+                <li class="pure-menu-item"><a href="history.html" class="pure-menu-link">History</a></li>
+                <li class="pure-menu-item pure-menu-disabled"></li>
+{% if session['logged_in'] %}
+                <li class="pure-menu-item"><a href="add_brew.html" class="pure-menu-link">Add Brew</a></li>
+                <li class="pure-menu-item"><a href="logout.html" class="pure-menu-link">Log Out</a></li>
+{% else %}
+                <li class="pure-menu-item"><a href="login.html" class="pure-menu-link">Log In</a></li>
+{% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="banner">
+        <h1 class="banner-head">
+            BrewAi
+        </h1>
+        <p class="banner-subhead">
+        BrewAi uses deep learning and recipes from brewersfriend.com <br>
+            to create recipes from beer name and/or style.<br>
+            Technical details can be found at github.com/asdfasdf
+        </p>
+    </div>
+<div class="l-content">
+<div class="pure-g" >
+
+    <div class="pure-u-1-24"> </div>
+    <div id="input_div" class="pure-u-22-24">
+        <h4>Enter Brew Name and/or Beer Style</h4>
+        <div class="pure-g" id="name_field">
+          <div class="pure-u-1-3">
+                <form id="brew_name_form">
+                    <input name="brew_name" id="brew_name" class="pure-u-23-24" type="text" placeholder="Brew Name">
+                    <br>
+                    <br>
+                    <select name="beer_style" class="pure-input-1-2" id="beer_style">
+                        <option>Choose BJCP Style</option>
+                    </select>
+                    <script type="text/javascript">
+                        "use strict";
+                        for (let category of Array.from(Brauhaus.getStyleCategories())) {
+                            for (let style of Array.from(Brauhaus.getStyles(category))) {
+                                $('#beer_style').append(`<option value='${category} - ${style}'>${category} - ${style}</option>`);
+                            }
+                        }
+                    </script>
+
+                </form>
+          </div>
+        </div>
+        <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick='var values = Sijax.getFormValues("#brew_name_form");Sijax.request("submit_brew_name",[values])'>Generate Recipe</a>
+        <h3></h3>
+    </div>
+    <div class="pure-u-1-24"> </div>
+
+    <div class="pure-u-1-24"> </div>
+    <div id="main" class="pure-u-22-24">
+    </div>
+    <div class="pure-u-1-24"> </div>
+
+    <div class="pure-u-md-1-24"> </div>
+    <div id="hops" class="pure-u-1 pure-u-md-11-24">
+    </div>
+    <div id="grain" class="pure-u-1 pure-u-md-11-24">
+    </div>
+    <div class="pure-u-md-1-24"> </div>
+
+    <div class="pure-u-md-1-24"> </div>
+    <div id="yeast" class="pure-u-1 pure-u-md-11-24">
+    </div>
+    <div class="pure-u-1-md-24"> </div>
+
+</div> <!-- /pure-g -->
+</div> <!-- /content -->
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+</body>
+</html>

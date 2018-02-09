@@ -9,15 +9,16 @@ import sqlite3
 import flask_sijax
 import os
 from datetime import datetime
+import time
 from decimal import *
 from pytz import timezone
 
 #config
 localTest = False;
 if (localTest):
-    DATABASE='brew_server.sql'
+    DATABASE='db_brew_server.sql'
 else:
-    DATABASE='/home/ubuntu/homebrewing/server/brew_server.sql'
+    DATABASE='/home/ubuntu/homebrewing/server/db_brew_server.sql'
 
 DEBUG=True
 SECRET_KEY='key'
@@ -67,22 +68,21 @@ def serve_page_index():
 
     return render_template('/index.html', bottleData=bottleData,brewData=brewData, tempList=tempList, guestBottles=guestBottles)
 
-
 @flask_sijax.route(app, '/on_tap.html')
 def serve_page_brewing_on_tap():
     def update_beers_left_handler(obj_response):
-        beerOnTap = db_execute("select name,style from brews where on_tap=1")
+        beerOnTap = db_execute("select name, style from brews where on_tap=1")
         if (len(beerOnTap)==0):
             beersLeftString = "Beers Left: 0"
             obj_response.html("#beers_left",beersLeftString)
             return
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         beersLeftString = "Beers Left: " + str(beersLeft)
         obj_response.html("#beers_left",beersLeftString)
 
     def update_oz_left_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = int(kegData[0]['current_volume'] / 16)
         ozLeftString =  str(kegData[0]['current_volume']) + "/" + str(kegData[0]['total_volume']) + " fl oz"
         obj_response.html("#oz_left",ozLeftString)
@@ -94,7 +94,7 @@ def serve_page_brewing_on_tap():
             img_src = url_for('static', filename=img_name)
             obj_response.attr("#keg_pic","src",img_src);
             return
-        kegData = db_execute("SELECT * FROM keg")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         beersLeft = float(kegData[0]['current_volume'])
         totalBeers = float(kegData[0]['total_volume'])
         beersLeftPercent = (beersLeft/totalBeers)*100;
@@ -243,7 +243,7 @@ def serve_page_brewing_on_tap():
         obj_response.script(scriptStr)
 
     def update_keg_stats_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
         kegStatsString = ""
 
         #days since tap
@@ -282,7 +282,7 @@ def serve_page_brewing_on_tap():
 
     def update_edit_keg_stat_table_handler(obj_response, show):
         if (show == 1):
-            kegData = db_execute("SELECT * FROM keg")
+            kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
             scriptStr = """
             $("#keg_edit").html("\
                 <form id='keg-stat-form' class='pure-form pure-form-stacked' method='post' >\
@@ -293,6 +293,7 @@ def serve_page_brewing_on_tap():
                     <input name='total-volume' type='text' value='"""+str(kegData[0]['total_volume'])+"""' required>\
                     <label for='tap-date'>Tap Date</label>\
                     <input name='tap-date' type='date' value='"""+str(kegData[0]['tap_date'])+"""' required>\
+                    <input name='kick-date' type='date' value='"""+str(kegData[0]['kick_date'])+"""'>\
                     <h4>\
                         <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"var values = Sijax.getFormValues('#keg-stat-form');Sijax.request('edit_keg_stats',[values])\\">Submit</a>\
                         <a class='pure-menu-link' style='white-space: normal' href='javascript://' onclick=\\"Sijax.request('update_edit_keg_stat_table',[0])\\">Done</a>\
@@ -311,16 +312,20 @@ def serve_page_brewing_on_tap():
 
     def edit_keg_stats_handler(obj_response,formData):
         #edit db
+        beerOnTap = db_execute("select id from brews where on_tap=1")
         dbStr = "update keg set "
         dbStr += " current_volume = "+str(formData['current-volume'])+","
         dbStr += " total_volume = "+str(formData['total-volume'])+","
-        dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\")"
+        dbStr += " tap_date = date(\""+str(formData['tap-date'])+"\"),"
+        dbStr += " kick_date = date(\""+str(formData['kick-date'])+"\")"
+        dbStr += " where brew_id = "+str(beerOnTap[0]['id'])
         dbStr += ";"
         db_execute(dbStr)
         update_edit_keg_stat_table_handler(obj_response,0)
 
     def update_last_pour_stats_handler(obj_response):
-        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(last_pour_time)")
+        kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
+        pourHistory = db_execute("SELECT * FROM pour_history ORDER BY datetime(pour_time) desc")
         #usernameData = db_execute("SELECT * FROM usernames where username=")
         lastPourString = ""
 
@@ -328,20 +333,20 @@ def serve_page_brewing_on_tap():
         #FACE_STATE_RECOGNIZED=1
         #FACE_STATE_NOT_REGISTERED=2
         #FACE_STATE_NO_FACE=3
-        if (kegData[0]['recognition_state'] == FACE_STATE_PENDING or kegData[0]['recognition_state'] == FACE_STATE_NO_FACE):
+        if (pourHistory[0]['recognition_state'] == FACE_STATE_PENDING or pourHistory[0]['recognition_state'] == FACE_STATE_NO_FACE):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
-        elif (kegData[0]['recognition_state'] == FACE_STATE_RECOGNIZED):
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
+        elif (pourHistory[0]['recognition_state'] == FACE_STATE_RECOGNIZED):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
-            lastPourString += "by " + str(kegData[0]['poured_username']) + " <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
-        elif (kegData[0]['recognition_state'] == FACE_STATE_NOT_REGISTERED):
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz "
+            lastPourString += "by " + str(pourHistory[0]['poured_username']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
+        elif (pourHistory[0]['recognition_state'] == FACE_STATE_NOT_REGISTERED):
             lastPourString += "Last pour: <br>"
-            lastPourString += str(kegData[0]['last_pour_volume']) + " oz "
-            lastPourString += "by a " + str(kegData[0]['poured_age']) + " yr old " + str(kegData[0]['poured_gender']) + " <br>"
-            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(kegData[0]['last_pour_time'])))
+            lastPourString += str(pourHistory[0]['pour_volume']) + " oz "
+            lastPourString += "by a " + str(pourHistory[0]['poured_age']) + " yr old " + str(pourHistory[0]['poured_gender']) + " <br>"
+            lastPourString += "at " + datetime_to_string(datetime_pst(datetime_from_sqlite(pourHistory[0]['pour_time'])))
 
         obj_response.html("#last_pour_stats",lastPourString)
 
@@ -369,9 +374,8 @@ def serve_page_brewing_on_tap():
     beerOnTap = db_execute("select * from brews where on_tap=1")
     if (len(beerOnTap)==0):
         return render_template('/on_tap.html', bottleData=bottleData, brewData=brewData, guestBottles=guestBottles)
-    kegData = db_execute("SELECT * FROM keg")
 
-    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], kegData=kegData[0],bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
+    return render_template('/on_tap.html', beerOnTap=beerOnTap[0], bottleData=bottleData,brewData=brewData,guestBottles=guestBottles)
 
 @flask_sijax.route(app, '/fermenting.html')
 def serve_page_brewing_fermenting():
@@ -411,17 +415,6 @@ def serve_page_brewing_fermenting():
     else:
         return render_template('fermenting.html', tempList=formattedTempList, fermStats=fermStats)
 
-@app.route('/update_temp.html',methods=['POST'])
-def serve_page_brewing_update_temp():
-    temp = request.form['temp']
-    avg = request.form['average']
-
-    # add temp
-    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
-    db_execute("update chamber set avg = "+avg)
-    return jsonify(result=True)
-
-
 @flask_sijax.route(app, '/brews.html')
 def serve_page_brewing_brews():
     def submit_edit_stat_table_handler(obj_response,id,formData):
@@ -439,6 +432,11 @@ def serve_page_brewing_brews():
             db_execute(dbStr)
         if formData.has_key('is_on_tap'):
             is_on_tap = 1
+            dbStr = "insert into keg values(560,560,"
+            dbStr += "Date('now'), NULL"
+            dbStr += str(id)
+            dbStr += ")"
+            db_execute(dbStr)
         else:
             is_on_tap = 0
         if formData.has_key('is_fermenting'):
@@ -601,8 +599,8 @@ def serve_page_brewing_brews():
             </table>\
             ");
             """
-        ########################### END HOPS ###################################
-        ########################### BEGIN HOPS ###################################
+        ########################### END GRAIN ##################################
+        ########################### BEGIN HOPS #################################
         displayHops = db_execute("SELECT * FROM hops where id="+str(id)+" order by boil_minutes desc")
         scriptStr += """
             $("#hopsTable").html("\
@@ -631,7 +629,7 @@ def serve_page_brewing_brews():
             ");
             """
         ########################### END HOPS ###################################
-        ########################### BEGIN yeast ###################################
+        ########################### BEGIN yeast ################################
         displayYeast = db_execute("SELECT * FROM yeast where id="+str(id))
         scriptStr += """
             $("#yeastTable").html("\
@@ -657,8 +655,8 @@ def serve_page_brewing_brews():
         </table>\
         ");
         """
-        ########################### END YEAST ###################################
-        ########################### BEGIN water ###################################
+        ########################### END YEAST ##################################
+        ########################### BEGIN WATER ################################
         displayWater = db_execute_args("SELECT * FROM water where profile_name=?",[displayBrew[0]['water_profile']])
         scriptStr += """
             $("#waterTable").html("\
@@ -704,8 +702,9 @@ def serve_page_brewing_brews():
         scriptStr += """\
         ");
         """
-        ########################### END YEAST ###################################
+        ########################### END WATER ##################################
         obj_response.script(scriptStr)
+
     if g.sijax.is_sijax_request:
         # Sijax request detected - let Sijax handle it
         g.sijax.set_request_uri('/brews.html')
@@ -718,8 +717,6 @@ def serve_page_brewing_brews():
     if request.method == 'GET':
         selectBrewId = request.args.get("selectBrewId")
         return render_template('brews.html', brews=brews, selectBrewId=selectBrewId)
-    return render_template('brews.html', brews=brews)
-
 
     return render_template('brews.html', brews=brews)
 
@@ -732,6 +729,11 @@ def serve_page_brewing_add_brew():
             is_in_bottles = 0
         if request.form.get('is_on_tap'):
             is_on_tap = 1
+            dbStr = "insert into keg values(560,560,"
+            dbStr += "Date('now'), NULL"
+            dbStr += str(request.form.get('brew-id'))
+            dbStr += ")"
+            db_execute(dbStr)
         else:
             is_on_tap = 0
         if request.form.get('is_fermenting'):
@@ -768,6 +770,165 @@ def serve_page_brewing_add_brew():
         #db_execute('insert into brews (name, style, brew_date, in_bottles, on_tap, fermenting) values (?, ?, ?, ?, ?, ?)',[request.form.get('brew-name'), request.form.get('brew-type'),request.form.get('brew-date'), is_in_bottles, is_on_tap, is_fermenting])
         flash('New entry was successfully posted')
     return render_template('add_brew.html')
+
+@app.route('/history.html')
+def serve_page_history():
+    pourHistory = db_execute("SELECT * FROM pour_history ORDER BY datetime(pour_time) desc")
+    keg = db_execute("SELECT * FROM keg ORDER BY date(tap_date) desc")
+    brews = db_execute("select name,id from brews")
+
+    brewid_to_name = {}
+    for brew in brews:
+        brewid_to_name[brew['id']] = brew['name']
+
+    # Per beer beer/day average
+    perBeerAvg = []
+    for k in keg:
+        if (not k['kick_date']):
+            daysTapped = (datetime.now() - date_from_sqlite(k['tap_date'])).days
+        else:
+            daysTapped = (date_from_sqlite(k['kick_date']) - date_from_sqlite(k['tap_date'])).days
+
+        volumeDrank = k['total_volume'] - k['current_volume']
+        beersPerDay = (float(volumeDrank) / daysTapped) / 16
+        perBeerAvg += [{'id':k['brew_id'], 'bpd':beersPerDay}]
+
+    # Weekday percentage split
+    total_oz = 0
+    weekdayAverages = [0.0] * 7
+    cumulativeVolume = []
+    for history in reversed(pourHistory):
+        weekdayAverages[datetime_pst(datetime_from_sqlite(history['pour_time'])).weekday()] += history['pour_volume']
+        total_oz += history['pour_volume']
+        date_js = int(time.mktime(datetime_from_sqlite(history['pour_time']).timetuple())) * 1000
+        cumulativeVolume += [{'volume':total_oz,'pour_time':date_js}]
+
+    for day in range(0,7):
+        weekdayAverages[day] /= total_oz
+
+    return render_template('/history.html', pourHistory=pourHistory, brewid_to_name=brewid_to_name, weekdayAverages=weekdayAverages, perBeerAvg=perBeerAvg, cumulativeVolume=cumulativeVolume)
+
+@flask_sijax.route(app, '/brewai.html')
+def serve_page_brewing_brewai():
+    def submit_brew_name_handler(obj_response,formData):
+
+        # TODO Generate beerxml recipe
+        if formData['brew_name'] == "":
+            obj_response.script("")
+            return
+        beerxml = "<RECIPES> <RECIPE> <NAME>"+formData['brew_name']+"</NAME> <VERSION>1</VERSION> <TYPE>All Grain</TYPE> <BREWER>Beerfan</BREWER> <DISPLAY_BATCH_SIZE>6.5 gal</DISPLAY_BATCH_SIZE> <DISPLAY_BOIL_SIZE>7.75 gal</DISPLAY_BOIL_SIZE> <BATCH_SIZE>24.60517657</BATCH_SIZE> <BOIL_SIZE>29.336941295</BOIL_SIZE> <BOIL_TIME>70</BOIL_TIME> <EFFICIENCY>79</EFFICIENCY> <NOTES>if your like me and love hops just add an ounce of Cascade to your keg, let it slow carbonate for a 3 or 4 days then take it out and enjoy a great beer! &#13; &#13; Adjust your caramel 60L and shoot for an SRM of 8. </NOTES> <EST_COLOR>8</EST_COLOR> <IBU>39.79</IBU> <IBU_METHOD>Tinseth</IBU_METHOD> <EST_ABV>5.58</EST_ABV> <EST_OG>1.055 sg</EST_OG> <EST_FG>1.013 sg</EST_FG> <OG>1.055</OG> <FG>1.013</FG> <PRIMING_SUGAR_NAME></PRIMING_SUGAR_NAME> <CARBONATION_USED></CARBONATION_USED> <BF_PRIMING_METHOD></BF_PRIMING_METHOD> <BF_PRIMING_AMOUNT></BF_PRIMING_AMOUNT> <BF_CO2_LEVEL></BF_CO2_LEVEL> <BF_CO2_UNIT>Volumes</BF_CO2_UNIT> <URL></URL> <BATCH_SIZE_MODE>f</BATCH_SIZE_MODE> <YEAST_STARTER>true</YEAST_STARTER> <NO_CHILL_EXTRA_MINUTES></NO_CHILL_EXTRA_MINUTES> <PITCH_RATE>1.0</PITCH_RATE> <FERMENTABLES> <FERMENTABLE> <NAME>Pale 2-Row</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>5.216312255</AMOUNT> <YIELD>80.43</YIELD> <COLOR>1.8</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> <FERMENTABLE> <NAME>Caramel / Crystal 60L</NAME> <VERSION>1</VERSION> <TYPE>Grain</TYPE> <AMOUNT>0.412202065874</AMOUNT> <YIELD>73.91</YIELD> <COLOR>60</COLOR> <ADD_AFTER_BOIL>false</ADD_AFTER_BOIL> <ORIGIN>American</ORIGIN> </FERMENTABLE> </FERMENTABLES> <HOPS> <HOP> <NAME>Magnum</NAME> <VERSION>1</VERSION> <ALPHA>15</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>60</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Perle</NAME> <VERSION>1</VERSION> <ALPHA>8.2</ALPHA> <AMOUNT>0.01417476155</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>30</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0283495231</AMOUNT> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <TIME>10</TIME> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <TIME>0</TIME> <USE>Boil</USE> <USER_HOP_USE>Boil</USER_HOP_USE> <FORM>Pellet</FORM> </HOP> <HOP> <NAME>Cascade</NAME> <VERSION>1</VERSION> <ALPHA>7</ALPHA> <AMOUNT>0.0566990462</AMOUNT> <USE>Dry Hop</USE> <USER_HOP_USE>Dry Hop</USER_HOP_USE> <TIME>5760</TIME> <FORM>Pellet</FORM> </HOP> </HOPS> <MISCS> <MISC> <NAME>Crush whilrfoc Tablet</NAME> <VERSION>1</VERSION> <TYPE>Water Agent</TYPE> <USE>Boil</USE> <TIME>10</TIME> <AMOUNT>1</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> </MISC> </MISCS> <MASH> <NAME>Mash Steps</NAME>";
+        beerxml += "<VERSION>1</VERSION> <GRAIN_TEMP>20</GRAIN_TEMP> <MASH_STEPS> <MASH_STEP> <NAME>Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>60</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>67.222222222222</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Mash-out Rest</NAME> <VERSION>1</VERSION> <TYPE>Temperature</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT></INFUSE_AMOUNT> <STEP_TEMP>75.555555555556</STEP_TEMP> </MASH_STEP> <MASH_STEP> <NAME>Sparge</NAME> <VERSION>1</VERSION> <TYPE>Infusion</TYPE> <STEP_TIME>10</STEP_TIME> <INFUSE_AMOUNT>18.9270589</INFUSE_AMOUNT> <STEP_TEMP>76.666666666667</STEP_TEMP> </MASH_STEP> </MASH_STEPS> </MASH> <YEASTS> <YEAST> <NAME>Safale - American Ale Yeast US-05</NAME> <VERSION>1</VERSION> <TYPE>Ale</TYPE> <FORM>Dry</FORM> <AMOUNT>0.11</AMOUNT> <AMOUNT_IS_WEIGHT>true</AMOUNT_IS_WEIGHT> <PRODUCT_ID>US-05</PRODUCT_ID> <LABORATORY>Fermentis / Safale</LABORATORY> <ATTENUATION>76</ATTENUATION> <FLOCCULATION>Medium</FLOCCULATION> <MIN_TEMPERATURE>12.222222222222</MIN_TEMPERATURE> <MAX_TEMPERATURE>25</MAX_TEMPERATURE> </YEAST> </YEASTS> <WATERS/> <STYLE> <NAME>American Pale Ale</NAME> <VERSION>1</VERSION> <CATEGORY>American Ale</CATEGORY> <CATEGORY_NUMBER>10</CATEGORY_NUMBER> <STYLE_LETTER>A</STYLE_LETTER> <STYLE_GUIDE>BJCP</STYLE_GUIDE> <TYPE>Ale</TYPE> <OG_MIN>1.045</OG_MIN> <OG_MAX>1.06</OG_MAX> <FG_MIN>1.01</FG_MIN> <FG_MAX>1.015</FG_MAX> <ABV_MIN>4.5</ABV_MIN> <ABV_MAX>6.2</ABV_MAX> <IBU_MIN>30</IBU_MIN> <IBU_MAX>45</IBU_MAX> <COLOR_MIN>5</COLOR_MIN> <COLOR_MAX>14</COLOR_MAX> </STYLE> </RECIPE> </RECIPES>";
+
+        # Get a list of recipes 
+        scriptStr = ""
+        scriptStr += """var recipes = Brauhaus.Recipe.fromBeerXml(" """+beerxml+""" ");"""
+
+        scriptStr += """var r = recipes[0];"""
+        scriptStr += """r.scale(Brauhaus.gallonsToLiters(5),Brauhaus.gallonsToLiters(6.5));"""
+        scriptStr += """r.calculate();"""
+
+        scriptStr += """var main_html = "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """main_html += "<thead>";"""
+        scriptStr += """main_html += "    <tr>";"""
+        scriptStr += """main_html += "        <th>Beer Stats </th>";"""
+        scriptStr += """main_html += "    </tr>";"""
+        scriptStr += """main_html += "</thead>";"""
+        scriptStr += """main_html += "<tbody>";"""
+        scriptStr += """main_html += "           <tr>";"""
+        scriptStr += """main_html += "               <td>";"""
+        scriptStr += """main_html += "                  <h1> "+r.name+" </h1>";"""
+        scriptStr += """main_html += "                  <h4>";"""
+        scriptStr += """main_html += "                      description TODO";"""
+        scriptStr += """main_html += "                  </h4>";"""
+        scriptStr += """main_html += "                  <h4>";"""
+        scriptStr += """main_html += "                      Style: style TODO <br>";"""
+        scriptStr += """main_html += "                      OG: "+r.og.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                      ABV: "+r.abv.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                      IBU: "+r.ibu.toFixed(2)+" <br>";"""
+        scriptStr += """main_html += "                  </h4>";"""
+        scriptStr += """main_html += "               </td>";"""
+        scriptStr += """main_html += "           </tr>";"""
+        scriptStr += """main_html += "   </tbody>";"""
+        scriptStr += """main_html += "</table>";"""
+        scriptStr += """$("#main").html(main_html);"""
+
+        # HOPS
+        scriptStr += """var hops_html = "    <br><h3>Hops:</h3>";"""
+        scriptStr += """hops_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """hops_html += "<thead>";"""
+        scriptStr += """hops_html += "    <tr>";"""
+        scriptStr += """hops_html += "        <th>Hop Type </th>";"""
+        scriptStr += """hops_html += "        <th>Amount in oz </th>";"""
+        scriptStr += """hops_html += "        <th>Boil Minutes </th>";"""
+        scriptStr += """hops_html += "    </tr>";"""
+        scriptStr += """hops_html += "</thead>";"""
+        scriptStr += """hops_html += "<tbody>";"""
+
+        scriptStr += """var hops = r.spices;"""
+        scriptStr += """for (var i=0; i<hops.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    hops_html += "           <tr>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].name+"</td>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].weightLbOz().oz.toFixed(2)+"</td>";"""
+        scriptStr += """    hops_html += "               <td> "+hops[i].time+"</td>";"""
+        scriptStr += """    hops_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """hops_html += "   </tbody>";"""
+        scriptStr += """hops_html += "</table>";"""
+        scriptStr += """$("#hops").html(hops_html);"""
+
+        ## GRAIN
+        scriptStr += """var grain_html = "    <br><h3>Grain:</h3>";"""
+        scriptStr += """grain_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """grain_html += "<thead>";"""
+        scriptStr += """grain_html += "    <tr>";"""
+        scriptStr += """grain_html += "     <th>Grain Type </th>";"""
+        scriptStr += """grain_html += "     <th>Amount in Lbs </th>";"""
+        scriptStr += """grain_html += "    </tr>";"""
+        scriptStr += """grain_html += "</thead>";"""
+        scriptStr += """grain_html += "<tbody>";"""
+
+        scriptStr += """var grain = r.fermentables;"""
+        scriptStr += """for (var i=0; i<grain.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    grain_html += "           <tr>";"""
+        scriptStr += """    grain_html += "               <td> "+grain[i].name+"</td>";"""
+        scriptStr += """    grain_html += "               <td> "+grain[i].weightLb().toFixed(2)+"</td>";"""
+        scriptStr += """    grain_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """grain_html += "   </tbody>";"""
+        scriptStr += """grain_html += "</table>";"""
+        scriptStr += """$("#grain").html(grain_html);"""
+
+        ## YEAST
+        scriptStr += """var yeast_html = "    <br><h3>Yeast:</h3>";"""
+        scriptStr += """yeast_html += "<table class='pure-table pure-table-bordered'>";"""
+        scriptStr += """yeast_html += "<thead>";"""
+        scriptStr += """yeast_html += "    <tr>";"""
+        scriptStr += """yeast_html += "     <th>Yeast Type </th>";"""
+        scriptStr += """yeast_html += "     <th>Fermentation Temperature </th>";"""
+        scriptStr += """yeast_html += "    </tr>";"""
+        scriptStr += """yeast_html += "</thead>";"""
+        scriptStr += """yeast_html += "<tbody>";"""
+
+        scriptStr += """var yeast = r.yeast;"""
+        scriptStr += """for (var i=0; i<yeast.length; i++)"""
+        scriptStr += """{"""
+        scriptStr += """    yeast_html += "           <tr>";"""
+        scriptStr += """    yeast_html += "               <td> "+yeast[i].name+"</td>";"""
+        scriptStr += """    yeast_html += "               <td> "+Brauhaus.cToF(r.primaryTemp)+"</td>";"""
+        scriptStr += """    yeast_html += "           </tr>";"""
+        scriptStr += """}"""
+        scriptStr += """yeast_html += "   </tbody>";"""
+        scriptStr += """yeast_html += "</table>";"""
+        scriptStr += """$("#yeast").html(yeast_html);"""
+        obj_response.script(scriptStr)
+    if g.sijax.is_sijax_request:
+        # Sijax request detected - let Sijax handle it
+        g.sijax.set_request_uri('/brewai.html')
+        g.sijax.register_callback('submit_brew_name', submit_brew_name_handler)
+        return g.sijax.process_request()
+    return render_template('/brewai.html')
 
 @app.route('/login.html', methods=['GET', 'POST'])
 def serve_page_brewing_login():
@@ -811,38 +972,46 @@ def serve_page_brewing_update_sec_per_oz_data():
     db_execute(dbStr)
     return jsonify(result=True)
 
-@app.route('/set_facial_recognition.html',methods=['POST'])
-def set_facial_recognition_api():
+@app.route('/update_tap.html',methods=['POST'])
+def serve_page_brewing_update_tap():
+    beerOnTap = db_execute("select name,style,id from brews where on_tap=1")
+    kegData = db_execute("SELECT * FROM keg ORDER BY datetime(tap_date) desc")
+
+    ozPoured = request.form['oz_poured']
     recognition_state = request.form['recognition_state']
     poured_username = request.form['poured_username']
     poured_age = request.form['poured_age']
     poured_gender = request.form['poured_gender']
 
-    # add latest facial recognition data
-    dbStr = "update keg set "
-    dbStr += "recognition_state="+str(recognition_state)+", "
-    dbStr += "poured_username=\""+str(poured_username)+"\", "
-    dbStr += "poured_age="+str(poured_age)+", "
-    dbStr += "poured_gender=\""+str(poured_gender)+"\";"
-    print dbStr;
-    db_execute(dbStr);
-    return jsonify(result=True)
-
-@app.route('/update_tap.html',methods=['POST'])
-def serve_page_brewing_update_tap():
-    ozPoured = request.form['oz_poured']
-    beerOnTap = db_execute("select name,style from brews where on_tap=1")
-    kegData = db_execute("SELECT * FROM keg")
-
     newVolume = kegData[0]['current_volume'] - int(ozPoured)
     if (newVolume < 0):
         newVolume = 0
 
-    db_execute("update keg set current_volume="+str(newVolume))
-    db_execute("update keg set last_pour_volume="+str(ozPoured))
-    db_execute("update keg set last_pour_time=DateTime('now')")
+    # add pour_history
+    dbStr = "insert into pour_history values("
+    dbStr += str(ozPoured)+", "
+    dbStr += "DateTime('now'), "
+    dbStr += str(recognition_state)+", "
+    dbStr += "\""+str(poured_username)+"\", "
+    dbStr += str(poured_age)+", "
+    dbStr += "\""+str(poured_gender)+"\", "
+    dbStr += str(beerOnTap[0]['id'])+");"
+    db_execute(dbStr);
+
+    # update keg status
+    db_execute("update keg set current_volume="+str(newVolume)+" where brew_id="+str(beerOnTap[0]['id']))
+    db_execute("update keg set last_pour_volume="+str(ozPoured)+" where brew_id="+str(beerOnTap[0]['id']))
     return jsonify(result=True)
 
+@app.route('/update_temp.html',methods=['POST'])
+def serve_page_brewing_update_temp():
+    temp = request.form['temp']
+    avg = request.form['average']
+
+    # add temp
+    db_execute("insert into temperatures values(CURRENT_TIMESTAMP,"+str(temp)+");")
+    db_execute("update chamber set avg = "+avg)
+    return jsonify(result=True)
 
 ### Helper fns #######################
 def db_execute(query):
@@ -857,17 +1026,21 @@ def db_execute_args(query,args):
     g.db.commit()
     return queryData
 
+@app.template_filter('datetime_pst')
 def datetime_pst(dt):
     # convert nieve to pacific
     dt_utc = dt.replace(tzinfo=timezone('UTC'))
     return dt_utc.astimezone(timezone('US/Pacific'))
 
+@app.template_filter('date_from_sqlite')
 def date_from_sqlite(dt):
     return datetime.strptime(dt,"%Y-%m-%d")
 
+@app.template_filter('datetime_from_sqlite')
 def datetime_from_sqlite(dt):
     return datetime.strptime(dt,"%Y-%m-%d %H:%M:%S")
 
+@app.template_filter('datetime_to_string')
 def datetime_to_string(dt):
     return dt.strftime("%Y-%m-%d %I:%M:%S %p")
 

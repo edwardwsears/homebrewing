@@ -15,11 +15,8 @@
     <!-- Beer Level animation  -->
     <!-- TODO back to this..<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script> -->
     <script src="{{ url_for('static', filename='jquery-1.11.2.min.js') }}"></script>
-    <script type="text/javascript"
-        src="/static/js/sijax/sijax.js"></script>
-    <script type="text/javascript">
-        {{ g.sijax.get_js()|safe }}
-    </script>
+    <script type="text/javascript" src="/static/js/sijax/sijax.js"></script>
+    <script type="text/javascript"> {{ g.sijax.get_js()|safe }} </script>
 
 </head>
 <body>
@@ -31,6 +28,7 @@
                 <li class="pure-menu-item"><a href="on_tap.html" class="pure-menu-link">On Tap</a></li>
                 <li class="pure-menu-item"><a href="fermenting.html" class="pure-menu-link">Fermenting</a></li>
                 <li class="pure-menu-item"><a href="brews.html" class="pure-menu-link">Brews</a></li>
+                <li class="pure-menu-item"><a href="history.html" class="pure-menu-link">History</a></li>
                 <li class="pure-menu-item pure-menu-disabled"></li>
 {% if session['logged_in'] %}
                 <li class="pure-menu-item"><a href="add_brew.html" class="pure-menu-link">Add Brew</a></li>
@@ -65,7 +63,7 @@
                 <tbody>
                     <tr>
                         <td width="50%">
-                            {% if kegData is defined %}
+                            {% if beerOnTap is defined %}
                             <h1> {{beerOnTap['name']}} </h1>
                             <h4> 
                                 {{beerOnTap['description']}}
