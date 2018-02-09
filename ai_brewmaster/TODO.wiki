@@ -1,10 +1,12 @@
 = TODO =
 1. [X] Word based? python instead of lua? (LSTM RNN Model)
-2. [ ] scrape and download beerxml recipes
-3. [ ] add start_text to sample
-4. [ ] update/remove length to end after end beerxml tag
-5. [ ] correct end tags as they come? otherwise, check validity of tags, rerun
-6. [ ] V2: update start_text as style as well.
-7. [ ] update website to input/display beerxml for recipes.
-8. [ ] Use beerxml to calculate recipe stats (instead of incorrect nn data).
-9. [ ] Add page to display recipe on website
+2. [X] scrape and download beerxml recipes
+3. [X] train a model
+4. [X] add start_text to sample
+6. [ ] update/remove length to end after end beerxml tag
+7. [ ] correct end tags as they come? otherwise, check validity of tags, rerun
+8. [ ] V2: update start_text as style as well.
+9. [ ] update website to input/display beerxml for recipes.
+10. [ ] Use beerxml to calculate recipe stats (instead of incorrect nn data).
+11. [ ] Add page to display recipe on website
+

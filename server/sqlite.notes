@@ -16,6 +16,8 @@ Insert:
 Delete row:
 %> DELETE FROM <table> WHERE [condition];
 
+Limit deletion etc to 1 deletion:
+Add "LIMIT 1" to end of expression
 
 Select:
 %> select * from <table>;
