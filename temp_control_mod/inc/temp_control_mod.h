@@ -19,6 +19,7 @@ struct temp_control
 {
     int set_temp;
     int set_range;
+    int current_temp;
     struct mutex obj_mutex;
 };
 

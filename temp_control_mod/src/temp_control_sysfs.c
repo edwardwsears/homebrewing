@@ -73,9 +73,27 @@ static ssize_t set_range_store(struct kobject *kobj, struct kobj_attribute *attr
 {
     LOCK_OBJ();
     sscanf(buf, "%du", &temp_control.set_range);
-    UNLOCK_OBJ();
     PRINT_TEMP_CONTROL("Changing allowable temperature range: %dF",temp_control.set_range);
+    UNLOCK_OBJ();
     return count;
+}
+
+//
+// Current Temp
+//
+
+static ssize_t current_temp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
+static struct kobj_attribute current_temp_attribute =__ATTR(current_temp, (S_IWUSR | S_IRUGO), current_temp_show, NULL);
+
+static ssize_t current_temp_show(struct kobject *kobj, struct kobj_attribute *attr,
+                      char *buf)
+{
+    ssize_t current_temp;
+    LOCK_OBJ();
+    current_temp = sprintf(buf, "%d\n", temp_control.current_temp);
+    UNLOCK_OBJ();
+    return current_temp;
 }
 
 //
@@ -92,6 +110,9 @@ void temp_control_sysfs_init(void){
         pr_debug("failed to create set_temp sysfs!\n");
     }
     if (sysfs_create_file(temp_control_kobject, &set_range_attribute.attr)) {
+        pr_debug("failed to create set_range sysfs!\n");
+    }
+    if (sysfs_create_file(temp_control_kobject, &current_temp_attribute.attr)) {
         pr_debug("failed to create set_range sysfs!\n");
     }
 

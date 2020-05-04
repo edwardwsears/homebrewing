@@ -1,16 +1,29 @@
+################################################################################
 FERMENTATION CONTROLLER:
+################################################################################
+
 1. Upload get_temp/get_temp.ino to arduino.
 
 To find ip of raspberry pi:
 %> arp -a //then try all these with pi@<ip>
 %> nmap -sP 192.168.0.*
 
-2. %> python ferm_chamber_controller_v2.py
+2. Start ferm chamber control
+2.1. Configure circular logfile:
+%>  sudo logrotate logrotate_ferm_chamber_temp.cfg
+2.2. Start chamber controller with nohup
+%> nohup python ferm_chamber_controller_v2.py >> /tmp/ferm_chamber_temp.log &
 
+
+################################################################################
 EKETTLE CONTROLLER:
+################################################################################
+
 %> python ekettle_controller.py --brew_name <brew name> --set_temp <temp> --set_range <range>
 
+################################################################################
 WEBSITE:
+################################################################################
 
 To start ssh:
 %> ssh-agent /bin/bash
@@ -32,11 +45,18 @@ ssh to aws instance:
 setup webserver:
 http://www.datasciencebytes.com/bytes/2015/02/24/running-a-flask-app-on-aws-ec2/
 
+################################################################################
 Tap Handle Sensor Monitor:
+################################################################################
+
  %> git clone --recursive https://github.com/WiringPi/WiringPi-Python.git
  %> cd WiringPi-Python/
  %> sudo apt-get install python-dev python-setuptools swig
  %> ./build
+
+################################################################################
+EXTRA NOTES:
+################################################################################
 
 Raspberry Pi disable low power mode:
 https://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/test-and-configure#fixing-wifi-dropout-issues
